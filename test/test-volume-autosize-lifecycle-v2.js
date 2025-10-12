@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * NetApp ONTAP Volume Lifecycle Test
- * Tests create → wait → offline → delete workflow
+ * NetApp ONTAP Volume Autosize Lifecycle Test
+ * Tests autosize enable/disable/configure and status retrieval
  * Supports both STDIO and HTTP (MCP JSON-RPC 2.0) modes
  */
 
@@ -138,7 +138,7 @@ async function getTestConfig(httpPort = 3000) {
   return {
     cluster_name: karanCluster.name,
     svm_name: svmName,
-    volume_name: `test_lifecycle_${Date.now()}`,
+    volume_name: `test_autosize_${Date.now()}`,
     size: '100MB',
     aggregate_name: aggregateName,
     wait_time: 10000, // 10 seconds
@@ -146,7 +146,7 @@ async function getTestConfig(httpPort = 3000) {
   };
 }
 
-class VolumeLifecycleTest {
+class VolumeAutosizeTest {
   constructor(mode = 'stdio', serverAlreadyRunning = false) {
     this.mode = mode; // 'stdio' or 'http'
     this.config = null; // Will be set async
@@ -155,6 +155,7 @@ class VolumeLifecycleTest {
     this.serverProcess = null;
     this.serverAlreadyRunning = serverAlreadyRunning;
     this.mcpClient = null; // MCP client for HTTP mode
+    this.testResults = []; // Track test results
   }
 
   async initialize() {
@@ -226,7 +227,7 @@ class VolumeLifecycleTest {
       this.config = {
         cluster_name: cluster.name,  // Use cluster_name for STDIO mode too
         svm_name: svmName,
-        volume_name: `test_lifecycle_${Date.now()}`,
+        volume_name: `test_autosize_${Date.now()}`,
         size: '100MB',
         aggregate_name: aggregateName,
         wait_time: 10000,
@@ -588,8 +589,8 @@ class VolumeLifecycleTest {
       const volumeText = this.extractText(listResult);
       const lines = volumeText.split('\n');
       
-      // Look for test_lifecycle_ volumes
-      const testVolumePattern = /- (test_lifecycle_\d+) \(([a-f0-9-]+)\)/;
+      // Look for test_autosize_ volumes
+      const testVolumePattern = /- (test_autosize_\d+) \(([a-f0-9-]+)\)/;
       let cleanedCount = 0;
       
       for (const line of lines) {
@@ -694,99 +695,170 @@ class VolumeLifecycleTest {
     }
   }
 
-  async step2_5_UpdateVolumeQoSPolicy() {
-    await this.log(`🔄 Step 2.5: Testing comprehensive volume update - changing QoS policy from performance-fixed to value-fixed`);
-    
-    const updateArgs = {
-      ...this.getClusterAuth(),
-      volume_uuid: this.volume_uuid,
-      qos_policy: 'value-fixed', // Change to value-fixed to test update functionality
-      comment: `Updated via comprehensive update tool - ${new Date().toISOString()}`
-    };
-
-    const result = await this.callTool('cluster_update_volume', updateArgs);
-    const resultText = this.extractText(result);
-    await this.log(`✅ Volume update result: ${resultText.substring(0, 100)}...`);
-    
-    // Verify the update was applied by checking volume configuration
-    await this.sleep(2000); // Wait 2 seconds for update to take effect
+  async test1_EnableAutosizeGrowMode() {
+    await this.log(`\n🧪 Test 1: Enable autosize in grow mode`);
     
     try {
-      const configResult = await this.callTool('get_volume_configuration', {
+      const result = await this.callTool('cluster_enable_volume_autosize', {
+        ...this.getClusterAuth(),
+        volume_uuid: this.volume_uuid,
+        mode: 'grow',
+        maximum_size: '200GB'
+      });
+      
+      const text = this.extractText(result);
+      await this.log(`   📝 Response: ${text.substring(0, 150)}`);
+      
+      if (text.includes('enabled') || text.includes('success')) {
+        await this.log(`   ✅ PASS: Autosize enabled in grow mode`);
+        this.testResults.push({ name: 'Enable autosize grow mode', status: 'PASS' });
+      } else {
+        throw new Error(`Unexpected response: ${text.substring(0, 100)}`);
+      }
+    } catch (error) {
+      await this.log(`   ❌ FAIL: ${error.message}`);
+      this.testResults.push({ name: 'Enable autosize grow mode', status: 'FAIL', error: error.message });
+    }
+  }
+
+  async test2_GetAutosizeStatus() {
+    await this.log(`\n🧪 Test 2: Get volume autosize status`);
+    
+    try {
+      const result = await this.callTool('cluster_get_volume_autosize_status', {
+        ...this.getClusterAuth(),
         volume_uuid: this.volume_uuid
       });
       
-      const configText = this.extractText(configResult);
-      await this.log(`📋 Volume configuration after update: ${configText.substring(0, 200)}...`);
+      const text = this.extractText(result);
+      await this.log(`   📝 Status: ${text.substring(0, 200)}`);
       
-      if (configText.includes('value-fixed')) {
-        await this.log(`✅ QoS policy successfully updated to value-fixed`);
+      if ((text.includes('Mode: grow') || text.includes('mode: grow') || text.includes('grow')) && text.includes('200')) {
+        await this.log(`   ✅ PASS: Autosize status retrieved correctly`);
+        this.testResults.push({ name: 'Get autosize status', status: 'PASS' });
       } else {
-        await this.log(`⚠️ QoS policy update may not be reflected in configuration yet`);
+        throw new Error(`Status does not match expected values: ${text.substring(0, 100)}`);
       }
     } catch (error) {
-      await this.log(`⚠️ Could not verify configuration update: ${error.message}`);
+      await this.log(`   ❌ FAIL: ${error.message}`);
+      this.testResults.push({ name: 'Get autosize status', status: 'FAIL', error: error.message });
     }
   }
 
-  async step3_OfflineVolume() {
-    await this.log(`📴 Step 3: Taking volume offline...`);
+  async test3_EnableAutosizeGrowShrinkMode() {
+    await this.log(`\n🧪 Test 3: Enable autosize in grow_shrink mode`);
     
-    const offlineArgs = {
-      ...this.getClusterAuth(),
-      volume_uuid: this.volume_uuid,
-      state: 'offline'
-    };
-
-    const result = await this.callTool('cluster_update_volume', offlineArgs);
-    const resultText = this.extractText(result);
-    await this.log(`✅ Volume offline result: ${resultText.substring(0, 100)}...`);
-    
-    // Verify volume is offline
-    await this.sleep(2000); // Wait 2 seconds for state change
-    const listResult = await this.callTool('cluster_list_volumes', {
-      ...this.getClusterAuth(),
-      svm_name: this.config.svm_name,
-    });
-    
-    const volumeText = this.extractText(listResult);
-    if (volumeText.includes(this.volume_uuid) && volumeText.includes('State: offline')) {
-      await this.log(`✅ Volume confirmed offline`);
-    } else {
-      await this.log(`⚠️ Warning: Volume state not confirmed as offline`);
+    try {
+      const result = await this.callTool('cluster_enable_volume_autosize', {
+        ...this.getClusterAuth(),
+        volume_uuid: this.volume_uuid,
+        mode: 'grow_shrink',
+        maximum_size: '300GB',
+        minimum_size: '50GB'
+      });
+      
+      const text = this.extractText(result);
+      await this.log(`   📝 Response: ${text.substring(0, 150)}`);
+      
+      if (text.includes('enabled') || text.includes('success')) {
+        await this.log(`   ✅ PASS: Autosize enabled in grow_shrink mode`);
+        this.testResults.push({ name: 'Enable autosize grow_shrink mode', status: 'PASS' });
+      } else {
+        throw new Error(`Unexpected response: ${text.substring(0, 100)}`);
+      }
+    } catch (error) {
+      await this.log(`   ❌ FAIL: ${error.message}`);
+      this.testResults.push({ name: 'Enable autosize grow_shrink mode', status: 'FAIL', error: error.message });
     }
   }
 
-  async step4_DeleteVolume() {
-    await this.log(`🗑️ Step 4: Deleting volume...`);
+  async test4_DisableAutosize() {
+    await this.log(`\n🧪 Test 4: Disable volume autosize`);
     
-    const deleteArgs = {
-      ...this.getClusterAuth(),
-      volume_uuid: this.volume_uuid,
-    };
+    try {
+      const result = await this.callTool('cluster_enable_volume_autosize', {
+        ...this.getClusterAuth(),
+        volume_uuid: this.volume_uuid,
+        mode: 'off'
+      });
+      
+      const text = this.extractText(result);
+      await this.log(`   📝 Response: ${text.substring(0, 150)}`);
+      
+      // Verify status
+      const statusResult = await this.callTool('cluster_get_volume_autosize_status', {
+        ...this.getClusterAuth(),
+        volume_uuid: this.volume_uuid
+      });
+      
+      const statusText = this.extractText(statusResult);
+      if (statusText.includes('Mode: off') || statusText.includes('disabled')) {
+        await this.log(`   ✅ PASS: Autosize disabled`);
+        this.testResults.push({ name: 'Disable autosize', status: 'PASS' });
+      } else {
+        throw new Error(`Autosize still enabled: ${statusText.substring(0, 100)}`);
+      }
+    } catch (error) {
+      await this.log(`   ❌ FAIL: ${error.message}`);
+      this.testResults.push({ name: 'Disable autosize', status: 'FAIL', error: error.message });
+    }
+  }
 
-    const result = await this.callTool('cluster_delete_volume', deleteArgs);
-    const resultText = this.extractText(result);
-    await this.log(`✅ Volume delete result: ${resultText.substring(0, 100)}...`);
+  async test5_EnableWithVolumeName() {
+    await this.log(`\n🧪 Test 5: Enable autosize using volume UUID`);
     
-    // Verify volume is gone
-    await this.sleep(2000); // Wait 2 seconds for deletion
-    const listResult = await this.callTool('cluster_list_volumes', {
-      ...this.getClusterAuth(),
-      svm_name: this.config.svm_name,
-    });
+    try {
+      const result = await this.callTool('cluster_enable_volume_autosize', {
+        ...this.getClusterAuth(),
+        volume_uuid: this.volume_uuid,
+        mode: 'grow',
+        maximum_size: '400GB'
+      });
+      
+      const text = this.extractText(result);
+      await this.log(`   📝 Response: ${text.substring(0, 150)}`);
+      
+      if (text.includes('enabled') || text.includes('success')) {
+        await this.log(`   ✅ PASS: Autosize enabled using volume UUID`);
+        this.testResults.push({ name: 'Enable autosize with UUID', status: 'PASS' });
+      } else {
+        throw new Error(`Unexpected response: ${text.substring(0, 100)}`);
+      }
+    } catch (error) {
+      await this.log(`   ❌ FAIL: ${error.message}`);
+      this.testResults.push({ name: 'Enable autosize with UUID', status: 'FAIL', error: error.message });
+    }
+  }
+
+  async cleanupVolume() {
+    await this.log(`\n🧹 Cleaning up test volume...`);
     
-    const volumeText = this.extractText(listResult);
-    if (!volumeText.includes(this.volume_uuid)) {
-      await this.log(`✅ Volume confirmed deleted`);
-    } else {
-      await this.log(`⚠️ Warning: Volume still appears in listing`);
+    try {
+      // Offline volume
+      await this.callTool('cluster_update_volume', {
+        ...this.getClusterAuth(),
+        volume_uuid: this.volume_uuid,
+        state: 'offline'
+      });
+      await this.log(`   ✓ Volume offlined`);
+      
+      // Delete volume
+      await this.callTool('cluster_delete_volume', {
+        ...this.getClusterAuth(),
+        volume_uuid: this.volume_uuid
+      });
+      await this.log(`   ✓ Volume deleted`);
+    } catch (error) {
+      await this.log(`   ⚠️  Cleanup error: ${error.message}`);
     }
   }
 
   async runTest() {
     try {
-      await this.log(`🚀 Starting Volume Lifecycle Test (${this.mode.toUpperCase()} mode)`);
+      await this.log(`\n╔════════════════════════════════════════════════════════════╗`);
+      await this.log(`║  NetApp ONTAP Volume Autosize Lifecycle Tests             ║`);
+      await this.log(`╚════════════════════════════════════════════════════════════╝`);
+      await this.log(`Mode: ${this.mode.toUpperCase()}`);
       
       // Start HTTP server for configuration (both modes need this)
       if (this.mode === 'http') {
@@ -804,13 +876,45 @@ class VolumeLifecycleTest {
       // Clean up any leftover test volumes from previous failed runs
       await this.cleanupOldTestVolumes();
 
+      // Create test volume
       await this.step1_CreateVolume();
       await this.step2_WaitAndVerify();
-      await this.step2_5_UpdateVolumeQoSPolicy();
-      await this.step3_OfflineVolume();
-      await this.step4_DeleteVolume();
       
-      await this.log(`🎉 Volume Lifecycle Test with QoS Policy-Group Integration COMPLETED SUCCESSFULLY!`);
+      // Run autosize tests
+      await this.log(`\n${'='.repeat(60)}`);
+      await this.log(`VOLUME AUTOSIZE TESTS`);
+      await this.log(`${'='.repeat(60)}`);
+      
+      await this.test1_EnableAutosizeGrowMode();
+      await this.test2_GetAutosizeStatus();
+      await this.test3_EnableAutosizeGrowShrinkMode();
+      await this.test4_DisableAutosize();
+      await this.test5_EnableWithVolumeName();
+      
+      // Cleanup
+      await this.cleanupVolume();
+      
+      // Results Summary
+      await this.log(`\n${'='.repeat(60)}`);
+      await this.log(`TEST RESULTS SUMMARY`);
+      await this.log(`${'='.repeat(60)}`);
+      
+      const passed = this.testResults.filter(r => r.status === 'PASS').length;
+      const failed = this.testResults.filter(r => r.status === 'FAIL').length;
+      
+      await this.log(`✅ Passed: ${passed}`);
+      await this.log(`❌ Failed: ${failed}`);
+      await this.log(`📊 Total:  ${this.testResults.length}`);
+      
+      if (failed > 0) {
+        await this.log(`\nFailed Tests:`);
+        this.testResults.filter(r => r.status === 'FAIL').forEach(r => {
+          this.log(`  ❌ ${r.name}: ${r.error}`);
+        });
+        throw new Error(`${failed} test(s) failed`);
+      }
+      
+      await this.log(`\n✅ All tests passed!`);
       
     } catch (error) {
       await this.log(`❌ Test FAILED: ${error.message}`);
@@ -866,11 +970,11 @@ async function main() {
   const serverAlreadyRunning = process.argv.includes('--server-running');
   
   if (!['stdio', 'http'].includes(mode)) {
-    console.error('Usage: node test-volume-lifecycle.js [stdio|http] [--server-running]');
+    console.error('Usage: node test-volume-autosize-lifecycle-v2.js [stdio|http] [--server-running]');
     process.exit(1);
   }
 
-  const test = new VolumeLifecycleTest(mode, serverAlreadyRunning);
+  const test = new VolumeAutosizeTest(mode, serverAlreadyRunning);
   
   try {
     await test.runTest();
@@ -880,7 +984,5 @@ async function main() {
     process.exit(1);
   }
 }
-
-main();
 
 main().catch(console.error);

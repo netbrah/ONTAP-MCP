@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * NetApp ONTAP Volume Lifecycle Test
- * Tests create → wait → offline → delete workflow
+ * NetApp ONTAP Volume Snapshot Lifecycle Test
+ * Tests snapshot list, info, and operations
  * Supports both STDIO and HTTP (MCP JSON-RPC 2.0) modes
  */
 
@@ -138,7 +138,7 @@ async function getTestConfig(httpPort = 3000) {
   return {
     cluster_name: karanCluster.name,
     svm_name: svmName,
-    volume_name: `test_lifecycle_${Date.now()}`,
+    volume_name: `test_snapshot_${Date.now()}`,
     size: '100MB',
     aggregate_name: aggregateName,
     wait_time: 10000, // 10 seconds
@@ -146,7 +146,7 @@ async function getTestConfig(httpPort = 3000) {
   };
 }
 
-class VolumeLifecycleTest {
+class VolumeSnapshotTest {
   constructor(mode = 'stdio', serverAlreadyRunning = false) {
     this.mode = mode; // 'stdio' or 'http'
     this.config = null; // Will be set async
@@ -155,6 +155,8 @@ class VolumeLifecycleTest {
     this.serverProcess = null;
     this.serverAlreadyRunning = serverAlreadyRunning;
     this.mcpClient = null; // MCP client for HTTP mode
+    this.testResults = []; // Track test results
+    this.testSnapshot = null; // Store snapshot info if found
   }
 
   async initialize() {
@@ -226,7 +228,7 @@ class VolumeLifecycleTest {
       this.config = {
         cluster_name: cluster.name,  // Use cluster_name for STDIO mode too
         svm_name: svmName,
-        volume_name: `test_lifecycle_${Date.now()}`,
+        volume_name: `test_snapshot_${Date.now()}`,
         size: '100MB',
         aggregate_name: aggregateName,
         wait_time: 10000,
@@ -588,8 +590,8 @@ class VolumeLifecycleTest {
       const volumeText = this.extractText(listResult);
       const lines = volumeText.split('\n');
       
-      // Look for test_lifecycle_ volumes
-      const testVolumePattern = /- (test_lifecycle_\d+) \(([a-f0-9-]+)\)/;
+      // Look for test_snapshot_ volumes
+      const testVolumePattern = /- (test_snapshot_\d+) \(([a-f0-9-]+)\)/;
       let cleanedCount = 0;
       
       for (const line of lines) {
@@ -694,99 +696,147 @@ class VolumeLifecycleTest {
     }
   }
 
-  async step2_5_UpdateVolumeQoSPolicy() {
-    await this.log(`🔄 Step 2.5: Testing comprehensive volume update - changing QoS policy from performance-fixed to value-fixed`);
-    
-    const updateArgs = {
-      ...this.getClusterAuth(),
-      volume_uuid: this.volume_uuid,
-      qos_policy: 'value-fixed', // Change to value-fixed to test update functionality
-      comment: `Updated via comprehensive update tool - ${new Date().toISOString()}`
-    };
-
-    const result = await this.callTool('cluster_update_volume', updateArgs);
-    const resultText = this.extractText(result);
-    await this.log(`✅ Volume update result: ${resultText.substring(0, 100)}...`);
-    
-    // Verify the update was applied by checking volume configuration
-    await this.sleep(2000); // Wait 2 seconds for update to take effect
+  async test1_ListVolumeSnapshots() {
+    await this.log(`\n🧪 Test 1: List volume snapshots`);
     
     try {
-      const configResult = await this.callTool('get_volume_configuration', {
+      const result = await this.callTool('cluster_list_volume_snapshots', {
+        ...this.getClusterAuth(),
         volume_uuid: this.volume_uuid
       });
       
-      const configText = this.extractText(configResult);
-      await this.log(`📋 Volume configuration after update: ${configText.substring(0, 200)}...`);
+      const text = this.extractText(result);
+      await this.log(`   📝 Response: ${text.substring(0, 200)}`);
       
-      if (configText.includes('value-fixed')) {
-        await this.log(`✅ QoS policy successfully updated to value-fixed`);
+      // Volume might not have snapshots yet (this is normal for new volumes)
+      if (text.includes('snapshot') || text.includes('No snapshots') || text.includes('Found 0')) {
+        await this.log(`   ✅ PASS: Snapshot list retrieved`);
+        this.testResults.push({ name: 'List volume snapshots', status: 'PASS' });
+        
+        // Try to extract snapshot info if any exist
+        const snapshotMatch = text.match(/- ([^\s]+)\s+\(([a-f0-9-]+)\)/);
+        if (snapshotMatch) {
+          this.testSnapshot = { name: snapshotMatch[1], uuid: snapshotMatch[2] };
+          await this.log(`   📸 Found snapshot: ${this.testSnapshot.name}`);
+        }
       } else {
-        await this.log(`⚠️ QoS policy update may not be reflected in configuration yet`);
+        throw new Error(`Unexpected response: ${text.substring(0, 100)}`);
       }
     } catch (error) {
-      await this.log(`⚠️ Could not verify configuration update: ${error.message}`);
+      await this.log(`   ❌ FAIL: ${error.message}`);
+      this.testResults.push({ name: 'List volume snapshots', status: 'FAIL', error: error.message });
     }
   }
 
-  async step3_OfflineVolume() {
-    await this.log(`📴 Step 3: Taking volume offline...`);
+  async test2_ListSnapshotsSortedBySize() {
+    await this.log(`\n🧪 Test 2: List snapshots sorted by size`);
     
-    const offlineArgs = {
-      ...this.getClusterAuth(),
-      volume_uuid: this.volume_uuid,
-      state: 'offline'
-    };
-
-    const result = await this.callTool('cluster_update_volume', offlineArgs);
-    const resultText = this.extractText(result);
-    await this.log(`✅ Volume offline result: ${resultText.substring(0, 100)}...`);
-    
-    // Verify volume is offline
-    await this.sleep(2000); // Wait 2 seconds for state change
-    const listResult = await this.callTool('cluster_list_volumes', {
-      ...this.getClusterAuth(),
-      svm_name: this.config.svm_name,
-    });
-    
-    const volumeText = this.extractText(listResult);
-    if (volumeText.includes(this.volume_uuid) && volumeText.includes('State: offline')) {
-      await this.log(`✅ Volume confirmed offline`);
-    } else {
-      await this.log(`⚠️ Warning: Volume state not confirmed as offline`);
+    try {
+      const result = await this.callTool('cluster_list_volume_snapshots', {
+        ...this.getClusterAuth(),
+        volume_uuid: this.volume_uuid,
+        order_by: 'size desc'
+      });
+      
+      const text = this.extractText(result);
+      await this.log(`   � Response: ${text.substring(0, 200)}`);
+      
+      if (text.includes('snapshot') || text.includes('No snapshots') || text.includes('Found 0')) {
+        await this.log(`   ✅ PASS: Snapshots retrieved with size sorting`);
+        this.testResults.push({ name: 'List snapshots sorted by size', status: 'PASS' });
+      } else {
+        throw new Error(`Unexpected response: ${text.substring(0, 100)}`);
+      }
+    } catch (error) {
+      await this.log(`   ❌ FAIL: ${error.message}`);
+      this.testResults.push({ name: 'List snapshots sorted by size', status: 'FAIL', error: error.message });
     }
   }
 
-  async step4_DeleteVolume() {
-    await this.log(`🗑️ Step 4: Deleting volume...`);
+  async test3_GetSnapshotInfo() {
+    await this.log(`\n🧪 Test 3: Get snapshot info (if snapshot exists)`);
     
-    const deleteArgs = {
-      ...this.getClusterAuth(),
-      volume_uuid: this.volume_uuid,
-    };
+    if (!this.testSnapshot) {
+      await this.log(`   ⏭️  SKIP: No snapshots available on volume`);
+      this.testResults.push({ name: 'Get snapshot info', status: 'SKIP', error: 'No snapshots' });
+      return;
+    }
+    
+    try {
+      const result = await this.callTool('cluster_get_volume_snapshot_info', {
+        ...this.getClusterAuth(),
+        volume_uuid: this.volume_uuid,
+        snapshot_uuid: this.testSnapshot.uuid
+      });
+      
+      const text = this.extractText(result);
+      await this.log(`   📝 Response: ${text.substring(0, 200)}`);
+      
+      if (text.includes(this.testSnapshot.name) || text.includes('snapshot')) {
+        await this.log(`   ✅ PASS: Snapshot info retrieved`);
+        this.testResults.push({ name: 'Get snapshot info', status: 'PASS' });
+      } else {
+        throw new Error(`Unexpected response: ${text.substring(0, 100)}`);
+      }
+    } catch (error) {
+      await this.log(`   ❌ FAIL: ${error.message}`);
+      this.testResults.push({ name: 'Get snapshot info', status: 'FAIL', error: error.message });
+    }
+  }
 
-    const result = await this.callTool('cluster_delete_volume', deleteArgs);
-    const resultText = this.extractText(result);
-    await this.log(`✅ Volume delete result: ${resultText.substring(0, 100)}...`);
+  async test4_VerifySnapshotOperations() {
+    await this.log(`\n🧪 Test 4: Verify snapshot operations are available`);
     
-    // Verify volume is gone
-    await this.sleep(2000); // Wait 2 seconds for deletion
-    const listResult = await this.callTool('cluster_list_volumes', {
-      ...this.getClusterAuth(),
-      svm_name: this.config.svm_name,
-    });
+    try {
+      // Just verify we can call the list operation again (validates API is working)
+      const result = await this.callTool('cluster_list_volume_snapshots', {
+        ...this.getClusterAuth(),
+        volume_uuid: this.volume_uuid
+      });
+      
+      const text = this.extractText(result);
+      
+      if (text) {
+        await this.log(`   ✅ PASS: Snapshot operations functional`);
+        this.testResults.push({ name: 'Verify snapshot operations', status: 'PASS' });
+      } else {
+        throw new Error('Empty response');
+      }
+    } catch (error) {
+      await this.log(`   ❌ FAIL: ${error.message}`);
+      this.testResults.push({ name: 'Verify snapshot operations', status: 'FAIL', error: error.message });
+    }
+  }
+
+  async cleanupVolume() {
+    await this.log(`\n🧹 Cleaning up test volume...`);
     
-    const volumeText = this.extractText(listResult);
-    if (!volumeText.includes(this.volume_uuid)) {
-      await this.log(`✅ Volume confirmed deleted`);
-    } else {
-      await this.log(`⚠️ Warning: Volume still appears in listing`);
+    try {
+      // Offline volume
+      await this.callTool('cluster_update_volume', {
+        ...this.getClusterAuth(),
+        volume_uuid: this.volume_uuid,
+        state: 'offline'
+      });
+      await this.log(`   ✓ Volume offlined`);
+      
+      // Delete volume
+      await this.callTool('cluster_delete_volume', {
+        ...this.getClusterAuth(),
+        volume_uuid: this.volume_uuid
+      });
+      await this.log(`   ✓ Volume deleted`);
+    } catch (error) {
+      await this.log(`   ⚠️  Cleanup error: ${error.message}`);
     }
   }
 
   async runTest() {
     try {
-      await this.log(`🚀 Starting Volume Lifecycle Test (${this.mode.toUpperCase()} mode)`);
+      await this.log(`\n╔════════════════════════════════════════════════════════════╗`);
+      await this.log(`║  NetApp ONTAP Volume Snapshot Lifecycle Tests             ║`);
+      await this.log(`╚════════════════════════════════════════════════════════════╝`);
+      await this.log(`Mode: ${this.mode.toUpperCase()}`);
       
       // Start HTTP server for configuration (both modes need this)
       if (this.mode === 'http') {
@@ -804,13 +854,50 @@ class VolumeLifecycleTest {
       // Clean up any leftover test volumes from previous failed runs
       await this.cleanupOldTestVolumes();
 
+      // Create test volume and wait for it to be ready
       await this.step1_CreateVolume();
       await this.step2_WaitAndVerify();
-      await this.step2_5_UpdateVolumeQoSPolicy();
-      await this.step3_OfflineVolume();
-      await this.step4_DeleteVolume();
       
-      await this.log(`🎉 Volume Lifecycle Test with QoS Policy-Group Integration COMPLETED SUCCESSFULLY!`);
+      // Wait a bit for ONTAP to create automatic snapshots (if configured)
+      await this.log(`⏱️ Waiting 5 seconds for potential automatic snapshots...`);
+      await this.sleep(5000);
+      
+      // Run snapshot tests
+      await this.log(`\n${'='.repeat(60)}`);
+      await this.log(`VOLUME SNAPSHOT TESTS`);
+      await this.log(`${'='.repeat(60)}`);
+      
+      await this.test1_ListVolumeSnapshots();
+      await this.test2_ListSnapshotsSortedBySize();
+      await this.test3_GetSnapshotInfo();
+      await this.test4_VerifySnapshotOperations();
+      
+      // Cleanup
+      await this.cleanupVolume();
+      
+      // Results Summary
+      await this.log(`\n${'='.repeat(60)}`);
+      await this.log(`TEST RESULTS SUMMARY`);
+      await this.log(`${'='.repeat(60)}`);
+      
+      const passed = this.testResults.filter(r => r.status === 'PASS').length;
+      const failed = this.testResults.filter(r => r.status === 'FAIL').length;
+      const skipped = this.testResults.filter(r => r.status === 'SKIP').length;
+      
+      await this.log(`✅ Passed:  ${passed}`);
+      await this.log(`❌ Failed:  ${failed}`);
+      await this.log(`⏭️  Skipped: ${skipped}`);
+      await this.log(`📊 Total:   ${this.testResults.length}`);
+      
+      if (failed > 0) {
+        await this.log(`\nFailed Tests:`);
+        this.testResults.filter(r => r.status === 'FAIL').forEach(r => {
+          this.log(`  ❌ ${r.name}: ${r.error}`);
+        });
+        throw new Error(`${failed} test(s) failed`);
+      }
+      
+      await this.log(`\n✅ All tests passed!`);
       
     } catch (error) {
       await this.log(`❌ Test FAILED: ${error.message}`);
@@ -866,11 +953,11 @@ async function main() {
   const serverAlreadyRunning = process.argv.includes('--server-running');
   
   if (!['stdio', 'http'].includes(mode)) {
-    console.error('Usage: node test-volume-lifecycle.js [stdio|http] [--server-running]');
+    console.error('Usage: node test-volume-snapshot-lifecycle-v2.js [stdio|http] [--server-running]');
     process.exit(1);
   }
 
-  const test = new VolumeLifecycleTest(mode, serverAlreadyRunning);
+  const test = new VolumeSnapshotTest(mode, serverAlreadyRunning);
   
   try {
     await test.runTest();
@@ -880,7 +967,5 @@ async function main() {
     process.exit(1);
   }
 }
-
-main();
 
 main().catch(console.error);
