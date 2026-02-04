@@ -1653,4 +1653,177 @@ export class OntapApiClient {
 
     return Math.floor(value * multipliers[unit]);
   }
+
+  // ================================
+  // Key Manager Methods
+  // ================================
+
+  /**
+   * List key managers (onboard and external)
+   */
+  async listKeyManagers(params?: {
+    scope?: 'cluster' | 'svm';
+    svmName?: string;
+  }): Promise<any[]> {
+    let url = '/api/security/key-managers?fields=*';
+    if (params?.scope) url += `&scope=${params.scope}`;
+    if (params?.svmName) url += `&svm.name=${encodeURIComponent(params.svmName)}`;
+    
+    const response = await this.makeRequest<{ records: any[] }>(url);
+    return response.records || [];
+  }
+
+  /**
+   * Get detailed information about a specific key manager
+   */
+  async getKeyManager(uuid: string): Promise<any> {
+    const response = await this.makeRequest(`/api/security/key-managers/${uuid}?fields=*`);
+    return response;
+  }
+
+  /**
+   * Create external key manager configuration
+   */
+  async createExternalKeyManager(params: {
+    svmUuid?: string;
+    clientCertificateUuid: string;
+    serverCaCertificateUuids: string[];
+    servers: { server: string; timeout?: number }[];
+    policy?: string;
+  }): Promise<{ uuid: string }> {
+    const body: any = {
+      external: {
+        client_certificate: { uuid: params.clientCertificateUuid },
+        server_ca_certificates: params.serverCaCertificateUuids.map(uuid => ({ uuid })),
+        servers: params.servers
+      }
+    };
+    
+    if (params.svmUuid) {
+      body.svm = { uuid: params.svmUuid };
+    }
+    if (params.policy) {
+      body.policy = params.policy;
+    }
+    
+    const response = await this.makeRequest<{ records: any[] }>('/api/security/key-managers?return_records=true', 'POST', body);
+    return { uuid: response.records[0].uuid };
+  }
+
+  /**
+   * Create onboard key manager with passphrase
+   */
+  async createOnboardKeyManager(params: {
+    passphrase: string;
+    synchronize?: boolean;
+  }): Promise<{ uuid: string }> {
+    const body = {
+      onboard: {
+        passphrase: params.passphrase,
+        synchronize: params.synchronize
+      }
+    };
+    
+    const response = await this.makeRequest<{ records: any[] }>('/api/security/key-managers?return_records=true', 'POST', body);
+    return { uuid: response.records[0].uuid };
+  }
+
+  /**
+   * Update onboard key manager passphrase
+   */
+  async updateKeyManagerPassphrase(uuid: string, params: {
+    existingPassphrase: string;
+    newPassphrase: string;
+  }): Promise<void> {
+    await this.makeRequest(`/api/security/key-managers/${uuid}`, 'PATCH', {
+      onboard: {
+        existing_passphrase: params.existingPassphrase,
+        passphrase: params.newPassphrase
+      }
+    });
+  }
+
+  /**
+   * Synchronize onboard keys across cluster nodes
+   */
+  async syncOnboardKeyManager(uuid: string, passphrase: string): Promise<void> {
+    await this.makeRequest(`/api/security/key-managers/${uuid}`, 'PATCH', {
+      onboard: {
+        existing_passphrase: passphrase,
+        synchronize: true
+      }
+    });
+  }
+
+  /**
+   * Delete a key manager configuration
+   */
+  async deleteKeyManager(uuid: string): Promise<void> {
+    await this.makeRequest(`/api/security/key-managers/${uuid}`, 'DELETE');
+  }
+
+  /**
+   * List key servers for an external key manager
+   */
+  async listKeyServers(keyManagerUuid: string): Promise<any[]> {
+    const response = await this.makeRequest<{ records: any[] }>(
+      `/api/security/key-managers/${keyManagerUuid}/key-servers?fields=*`);
+    return response.records || [];
+  }
+
+  /**
+   * Add a key server to an external key manager
+   */
+  async addKeyServer(keyManagerUuid: string, params: {
+    server: string;
+    timeout?: number;
+    username?: string;
+    password?: string;
+  }): Promise<void> {
+    await this.makeRequest(
+      `/api/security/key-managers/${keyManagerUuid}/key-servers`, 'POST', params);
+  }
+
+  /**
+   * Remove a key server from an external key manager
+   */
+  async deleteKeyServer(keyManagerUuid: string, server: string): Promise<void> {
+    const encodedServer = encodeURIComponent(server);
+    await this.makeRequest(
+      `/api/security/key-managers/${keyManagerUuid}/key-servers/${encodedServer}`, 'DELETE');
+  }
+
+  /**
+   * List encryption keys in a key manager
+   */
+  async listKeys(keyManagerUuid: string, params?: {
+    keyType?: string;
+    restored?: boolean;
+  }): Promise<any[]> {
+    let url = `/api/security/key-managers/${keyManagerUuid}/keys?fields=*`;
+    if (params?.keyType) url += `&key_type=${params.keyType}`;
+    if (params?.restored !== undefined) url += `&restored=${params.restored}`;
+    
+    const response = await this.makeRequest<{ records: any[] }>(url);
+    return response.records || [];
+  }
+
+  /**
+   * Create an authentication key for NSE drives
+   */
+  async createAuthKey(keyManagerUuid: string, params: {
+    keyTag?: string;
+    passphrase?: string;
+  }): Promise<{ keyId: string }> {
+    const response = await this.makeRequest<{ records: any[] }>(
+      `/api/security/key-managers/${keyManagerUuid}/auth-keys?return_records=true`, 'POST', params);
+    return { keyId: response.records[0].key_id };
+  }
+
+  /**
+   * Restore missing encryption keys to nodes
+   */
+  async restoreKeys(keyManagerUuid: string): Promise<void> {
+    await this.makeRequest(`/api/security/key-managers/${keyManagerUuid}/restore`, 'POST');
+  }
 }
