@@ -1,48 +1,30 @@
 version: '3.8'
 
 services:
-  # NetApp ONTAP MCP Server (HTTP Mode)
-  ontap-mcp:
+  # NetApp ONTAP Key Manager MCP Server
+  ontap-key-manager-mcp:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ontap-mcp-server
+    container_name: ontap-key-manager-mcp
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:${PORT:-3000}"
     environment:
+      # Server configuration
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=${PORT:-3000}
+      
+      # ONTAP Cluster Configuration
+      # This should be a JSON array of cluster configurations
+      # Example: '[{"name":"cluster1","cluster_ip":"10.1.1.1","username":"admin","password":"pass","description":"Production Cluster"}]'
+      - ONTAP_CLUSTERS=${ONTAP_CLUSTERS}
+      
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:3000/health"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:${PORT:-3000}/', (r) => process.exit(r.statusCode == 200 ? 0 : 1))"]
       interval: 30s
       timeout: 3s
       retries: 3
-      start_period: 5s
-    restart: unless-stopped
-    networks:
-      - mcp-network
-
-  # Demo Web UI (Optional)
-  demo-ui:
-    build:
-      context: ./demo
-      dockerfile: Dockerfile
-    container_name: ontap-mcp-demo
-    ports:
-      - "8080:8080"
-    volumes:
-      # Mount clusters.json if it exists (optional, contains credentials)
-      # Demo will auto-load clusters on startup if this file is present
-      - ./demo/clusters.json:/usr/share/nginx/html/clusters.json:ro
-    depends_on:
-      ontap-mcp:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:8080"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 5s
+      start_period: 10s
     restart: unless-stopped
     networks:
       - mcp-network
@@ -52,23 +34,12 @@ networks:
     driver: bridge
 
 # Usage:
-#   # Quick start (with cluster auto-loading):
-#   cp demo/clusters.json.example demo/clusters.json  # Edit with your clusters
-#   docker-compose up -d
-#   
-#   # Or use make:
-#   make run-demo
+#   1. Copy .env.example to .env and configure your clusters
+#   2. Run: docker-compose up -d
+#   3. Access: http://localhost:3000/sse (SSE endpoint for MCP)
 #
-#   # Access:
-#   # - MCP Server: http://localhost:3000
-#   # - Demo UI:    http://localhost:8080
-#
-#   # View logs:
+# View logs:
 #   docker-compose logs -f
 #
-#   # Stop:
+# Stop:
 #   docker-compose down
-#
-# Note: If demo/clusters.json exists, the demo UI will auto-load those clusters
-#       into the MCP session on page load. If not, demo works normally with no
-#       clusters pre-loaded (add them manually via UI).
