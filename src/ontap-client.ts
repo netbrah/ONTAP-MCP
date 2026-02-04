@@ -1665,7 +1665,7 @@ export class OntapApiClient {
     scope?: 'cluster' | 'svm';
     svmName?: string;
   }): Promise<any[]> {
-    let url = '/api/security/key-managers?fields=*';
+    let url = '/security/key-managers?fields=*';
     if (params?.scope) url += `&scope=${params.scope}`;
     if (params?.svmName) url += `&svm.name=${encodeURIComponent(params.svmName)}`;
     
@@ -1677,7 +1677,7 @@ export class OntapApiClient {
    * Get detailed information about a specific key manager
    */
   async getKeyManager(uuid: string): Promise<any> {
-    const response = await this.makeRequest(`/api/security/key-managers/${uuid}?fields=*`);
+    const response = await this.makeRequest(`/security/key-managers/${uuid}?fields=*`);
     return response;
   }
 
@@ -1706,7 +1706,7 @@ export class OntapApiClient {
       body.policy = params.policy;
     }
     
-    const response = await this.makeRequest<{ records: any[] }>('/api/security/key-managers?return_records=true', 'POST', body);
+    const response = await this.makeRequest<{ records: any[] }>('/security/key-managers?return_records=true', 'POST', body);
     return { uuid: response.records[0].uuid };
   }
 
@@ -1724,7 +1724,7 @@ export class OntapApiClient {
       }
     };
     
-    const response = await this.makeRequest<{ records: any[] }>('/api/security/key-managers?return_records=true', 'POST', body);
+    const response = await this.makeRequest<{ records: any[] }>('/security/key-managers?return_records=true', 'POST', body);
     return { uuid: response.records[0].uuid };
   }
 
@@ -1735,7 +1735,7 @@ export class OntapApiClient {
     existingPassphrase: string;
     newPassphrase: string;
   }): Promise<void> {
-    await this.makeRequest(`/api/security/key-managers/${uuid}`, 'PATCH', {
+    await this.makeRequest(`/security/key-managers/${uuid}`, 'PATCH', {
       onboard: {
         existing_passphrase: params.existingPassphrase,
         passphrase: params.newPassphrase
@@ -1747,7 +1747,7 @@ export class OntapApiClient {
    * Synchronize onboard keys across cluster nodes
    */
   async syncOnboardKeyManager(uuid: string, passphrase: string): Promise<void> {
-    await this.makeRequest(`/api/security/key-managers/${uuid}`, 'PATCH', {
+    await this.makeRequest(`/security/key-managers/${uuid}`, 'PATCH', {
       onboard: {
         existing_passphrase: passphrase,
         synchronize: true
@@ -1759,7 +1759,7 @@ export class OntapApiClient {
    * Delete a key manager configuration
    */
   async deleteKeyManager(uuid: string): Promise<void> {
-    await this.makeRequest(`/api/security/key-managers/${uuid}`, 'DELETE');
+    await this.makeRequest(`/security/key-managers/${uuid}`, 'DELETE');
   }
 
   /**
@@ -1767,7 +1767,7 @@ export class OntapApiClient {
    */
   async listKeyServers(keyManagerUuid: string): Promise<any[]> {
     const response = await this.makeRequest<{ records: any[] }>(
-      `/api/security/key-managers/${keyManagerUuid}/key-servers?fields=*`);
+      `/security/key-managers/${keyManagerUuid}/key-servers?fields=*`);
     return response.records || [];
   }
 
@@ -1781,7 +1781,7 @@ export class OntapApiClient {
     password?: string;
   }): Promise<void> {
     await this.makeRequest(
-      `/api/security/key-managers/${keyManagerUuid}/key-servers`, 'POST', params);
+      `/security/key-managers/${keyManagerUuid}/key-servers`, 'POST', params);
   }
 
   /**
@@ -1790,7 +1790,7 @@ export class OntapApiClient {
   async deleteKeyServer(keyManagerUuid: string, server: string): Promise<void> {
     const encodedServer = encodeURIComponent(server);
     await this.makeRequest(
-      `/api/security/key-managers/${keyManagerUuid}/key-servers/${encodedServer}`, 'DELETE');
+      `/security/key-managers/${keyManagerUuid}/key-servers/${encodedServer}`, 'DELETE');
   }
 
   /**
@@ -1800,7 +1800,7 @@ export class OntapApiClient {
     keyType?: string;
     restored?: boolean;
   }): Promise<any[]> {
-    let url = `/api/security/key-managers/${keyManagerUuid}/keys?fields=*`;
+    let url = `/security/key-managers/${keyManagerUuid}/keys?fields=*`;
     if (params?.keyType) url += `&key_type=${params.keyType}`;
     if (params?.restored !== undefined) url += `&restored=${params.restored}`;
     
@@ -1816,7 +1816,7 @@ export class OntapApiClient {
     passphrase?: string;
   }): Promise<{ keyId: string }> {
     const response = await this.makeRequest<{ records: any[] }>(
-      `/api/security/key-managers/${keyManagerUuid}/auth-keys?return_records=true`, 'POST', params);
+      `/security/key-managers/${keyManagerUuid}/auth-keys?return_records=true`, 'POST', params);
     return { keyId: response.records[0].key_id };
   }
 
@@ -1824,6 +1824,6 @@ export class OntapApiClient {
    * Restore missing encryption keys to nodes
    */
   async restoreKeys(keyManagerUuid: string): Promise<void> {
-    await this.makeRequest(`/api/security/key-managers/${keyManagerUuid}/restore`, 'POST');
+    await this.makeRequest(`/security/key-managers/${keyManagerUuid}/restore`, 'POST');
   }
 }
