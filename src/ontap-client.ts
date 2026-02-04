@@ -1,8 +1,8 @@
 import * as https from 'https';
 import { z } from 'zod';
-import type { 
-  SnapshotPolicy, 
-  CreateSnapshotPolicyRequest, 
+import type {
+  SnapshotPolicy,
+  CreateSnapshotPolicyRequest,
   UpdateSnapshotPolicyRequest,
   SnapshotPolicyResponse,
   ListSnapshotPoliciesParams
@@ -147,21 +147,21 @@ export class OntapClusterManager {
    */
   async getAllClustersInfo(): Promise<Array<{ name: string; info: ClusterInfo; error?: string }>> {
     const results = [];
-    
+
     for (const [name, config] of Object.entries(this.clusters)) {
       try {
         const client = new OntapApiClient(config.cluster_ip, config.username, config.password);
         const info = await client.getClusterInfo();
         results.push({ name, info });
       } catch (error) {
-        results.push({ 
-          name, 
-          info: {} as ClusterInfo, 
-          error: error instanceof Error ? error.message : String(error) 
+        results.push({
+          name,
+          info: {} as ClusterInfo,
+          error: error instanceof Error ? error.message : String(error)
         });
       }
     }
-    
+
     return results;
   }
 }
@@ -182,7 +182,7 @@ export class OntapApiClient {
   ) {
     this.baseUrl = `https://${clusterIp}/api`;
     this.auth = Buffer.from(`${username}:${password}`).toString('base64');
-    
+
     // Create HTTPS agent that ignores self-signed certificates (common in ONTAP)
     this.agent = new https.Agent({
       rejectUnauthorized: false,
@@ -198,7 +198,7 @@ export class OntapApiClient {
     body?: any
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+
     const options: https.RequestOptions = {
       method,
       headers: {
@@ -212,11 +212,11 @@ export class OntapApiClient {
     return new Promise((resolve, reject) => {
       const req = https.request(url, options, (res) => {
         let data = '';
-        
+
         res.on('data', (chunk) => {
           data += chunk;
         });
-        
+
         res.on('end', () => {
           try {
             if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
@@ -238,7 +238,7 @@ export class OntapApiClient {
       if (body) {
         req.write(JSON.stringify(body));
       }
-      
+
       req.end();
     });
   }
@@ -256,11 +256,11 @@ export class OntapApiClient {
    */
   async listVolumes(svmName?: string): Promise<VolumeInfo[]> {
     let endpoint = '/storage/volumes?fields=uuid,name,size,state,type,svm,aggregates';
-    
+
     if (svmName) {
       endpoint += `&svm.name=${encodeURIComponent(svmName)}`;
     }
-    
+
     const response = await this.makeRequest<{ records: VolumeInfo[] }>(endpoint);
     return response.records || [];
   }
@@ -306,7 +306,7 @@ export class OntapApiClient {
       'POST',
       body
     );
-    
+
     // Handle different response formats from ONTAP API
     let volumeUuid: string;
     if (response.uuid) {
@@ -314,22 +314,22 @@ export class OntapApiClient {
       volumeUuid = response.uuid;
     } else if (response.job) {
       // Asynchronous job response - wait for job completion then find volume
-      
+
       // Wait for job to complete (check job status)
       let jobComplete = false;
       let jobAttempts = 0;
       const maxJobAttempts = 10;
-      
+
       console.log(`[DEBUG] Volume creation job started: ${response.job.uuid}`);
-      
+
       while (!jobComplete && jobAttempts < maxJobAttempts) {
         jobAttempts++;
         await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s between job checks
-        
+
         try {
           const jobStatus = await this.makeRequest<any>(`/cluster/jobs/${response.job.uuid}`);
           console.log(`[DEBUG] Job status check ${jobAttempts}/${maxJobAttempts}: state=${jobStatus.state}, message=${jobStatus.message || 'none'}`);
-          
+
           if (jobStatus.state === 'success') {
             console.log(`[DEBUG] Job completed successfully after ${jobAttempts} checks`);
             jobComplete = true;
@@ -347,63 +347,63 @@ export class OntapApiClient {
           console.log(`[DEBUG] Error checking job status: ${error}`);
         }
       }
-      
+
       if (!jobComplete) {
         console.log(`[DEBUG] Job did not complete after ${maxJobAttempts} attempts`);
       }
-      
+
       // Now find the volume by name
       let foundVolumeUuid: string | undefined;
       let attempts = 0;
       const maxAttempts = 5;
-      
+
       while (!foundVolumeUuid && attempts < maxAttempts) {
         attempts++;
         const delay = attempts * 1000;
         await new Promise(resolve => setTimeout(resolve, delay));
-        
+
         const volumes = await this.listVolumes(params.svm_name);
         console.log(`[DEBUG] Searching for volume '${params.volume_name}' on SVM '${params.svm_name}' (attempt ${attempts}/${maxAttempts})`);
         console.log(`[DEBUG] Found ${volumes.length} volumes on SVM:`, volumes.map(v => v.name).join(', '));
         const newVolume = volumes.find(v => v.name === params.volume_name);
-        
+
         if (newVolume) {
           console.log(`[DEBUG] Found volume '${params.volume_name}' with UUID: ${newVolume.uuid}`);
           foundVolumeUuid = newVolume.uuid;
           break;
         }
       }
-      
+
       if (!foundVolumeUuid) {
         console.log(`[DEBUG] Failed to find volume '${params.volume_name}' on SVM '${params.svm_name}' after ${maxAttempts} attempts`);
         throw new Error(`Volume '${params.volume_name}' was not found after creation job completed (tried ${maxAttempts} times)`);
       }
-      
+
       volumeUuid = foundVolumeUuid;
     } else {
       // No UUID or job - fallback to immediate polling (legacy behavior)
       let foundVolumeUuid: string | undefined;
       let attempts = 0;
       const maxAttempts = 5;
-      
+
       while (!foundVolumeUuid && attempts < maxAttempts) {
         attempts++;
         const delay = attempts * 1000;
         await new Promise(resolve => setTimeout(resolve, delay));
-        
+
         const volumes = await this.listVolumes(params.svm_name);
         const newVolume = volumes.find(v => v.name === params.volume_name);
-        
+
         if (newVolume) {
           foundVolumeUuid = newVolume.uuid;
           break;
         }
       }
-      
+
       if (!foundVolumeUuid) {
         throw new Error(`Volume '${params.volume_name}' was not found after creation (tried ${maxAttempts} times over ${maxAttempts * (maxAttempts + 1) / 2} seconds)`);
       }
-      
+
       volumeUuid = foundVolumeUuid;
     }
 
@@ -454,11 +454,11 @@ export class OntapApiClient {
   async getSvmDetails(svmName: string): Promise<{ uuid: string; name: string; state: string; aggregates?: Array<{ name: string; uuid: string }> }> {
     const endpoint = `/svm/svms?name=${encodeURIComponent(svmName)}&fields=uuid,name,state,aggregates`;
     const response = await this.makeRequest<{ records: Array<any> }>(endpoint);
-    
+
     if (!response.records || response.records.length === 0) {
       throw new Error(`SVM '${svmName}' not found`);
     }
-    
+
     return response.records[0];
   }
 
@@ -480,7 +480,7 @@ export class OntapApiClient {
     const body = {
       state: "offline"
     };
-    
+
     await this.makeRequest(endpoint, 'PATCH', body);
   }
 
@@ -490,7 +490,7 @@ export class OntapApiClient {
    */
   async deleteVolume(volumeUuid: string): Promise<void> {
     const endpoint = `/storage/volumes/${volumeUuid}`;
-    
+
     await this.makeRequest(endpoint, 'DELETE');
   }
 
@@ -513,7 +513,7 @@ export class OntapApiClient {
    */
   async listSnapshotPolicies(params?: ListSnapshotPoliciesParams): Promise<SnapshotPolicy[]> {
     let endpoint = '/storage/snapshot-policies?fields=uuid,name,comment,svm,enabled';
-    
+
     if (params) {
       const queryParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
@@ -525,7 +525,7 @@ export class OntapApiClient {
         endpoint += `&${queryParams.toString()}`;
       }
     }
-    
+
     const response = await this.makeRequest<SnapshotPolicyResponse>(endpoint);
     return response.records || [];
   }
@@ -535,13 +535,13 @@ export class OntapApiClient {
    */
   async getSnapshotPolicy(nameOrUuid: string, svmName?: string): Promise<SnapshotPolicy> {
     let endpoint = `/storage/snapshot-policies?name=${encodeURIComponent(nameOrUuid)}&fields=uuid,name,comment,svm,enabled`;
-    
+
     if (svmName) {
       endpoint += `&svm.name=${encodeURIComponent(svmName)}`;
     }
-    
+
     const response = await this.makeRequest<SnapshotPolicyResponse>(endpoint);
-    
+
     if (!response.records || response.records.length === 0) {
       // Try by UUID
       try {
@@ -551,7 +551,7 @@ export class OntapApiClient {
         throw new Error(`Snapshot policy '${nameOrUuid}' not found`);
       }
     }
-    
+
     return response.records[0];
   }
 
@@ -573,13 +573,13 @@ export class OntapApiClient {
   async updateSnapshotPolicy(nameOrUuid: string, updates: UpdateSnapshotPolicyRequest): Promise<void> {
     // First get the policy to determine if we're using name or UUID
     let policyUuid = nameOrUuid;
-    
+
     // If it doesn't look like a UUID, find the policy by name
     if (!nameOrUuid.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
       const policy = await this.getSnapshotPolicy(nameOrUuid);
       policyUuid = policy.uuid!;
     }
-    
+
     await this.makeRequest(
       `/storage/snapshot-policies/${policyUuid}`,
       'PATCH',
@@ -593,13 +593,13 @@ export class OntapApiClient {
   async deleteSnapshotPolicy(nameOrUuid: string): Promise<void> {
     // First get the policy to determine if we're using name or UUID
     let policyUuid = nameOrUuid;
-    
+
     // If it doesn't look like a UUID, find the policy by name
     if (!nameOrUuid.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
       const policy = await this.getSnapshotPolicy(nameOrUuid);
       policyUuid = policy.uuid!;
     }
-    
+
     await this.makeRequest(
       `/storage/snapshot-policies/${policyUuid}`,
       'DELETE'
@@ -615,7 +615,7 @@ export class OntapApiClient {
         name: policyName
       }
     };
-    
+
     await this.makeRequest(
       `/storage/volumes/${volumeUuid}`,
       'PATCH',
@@ -632,7 +632,7 @@ export class OntapApiClient {
         name: "default"
       }
     };
-    
+
     await this.makeRequest(
       `/storage/volumes/${volumeUuid}`,
       'PATCH',
@@ -649,7 +649,7 @@ export class OntapApiClient {
    */
   async listExportPolicies(params?: ListExportPoliciesParams): Promise<ExportPolicy[]> {
     let endpoint = '/protocols/nfs/export-policies?fields=id,name,svm,rules';
-    
+
     if (params) {
       const queryParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
@@ -661,7 +661,7 @@ export class OntapApiClient {
         endpoint += `&${queryParams.toString()}`;
       }
     }
-    
+
     const response = await this.makeRequest<ExportPolicyResponse>(endpoint);
     return response.records || [];
   }
@@ -677,17 +677,17 @@ export class OntapApiClient {
     } else {
       // It's a name, search for it
       let endpoint = `/protocols/nfs/export-policies?name=${encodeURIComponent(nameOrId.toString())}&fields=id,name,svm,rules`;
-      
+
       if (svmName) {
         endpoint += `&svm.name=${encodeURIComponent(svmName)}`;
       }
-      
+
       const response = await this.makeRequest<ExportPolicyResponse>(endpoint);
-      
+
       if (!response.records || response.records.length === 0) {
         throw new Error(`Export policy '${nameOrId}' not found`);
       }
-      
+
       return response.records[0];
     }
   }
@@ -709,14 +709,14 @@ export class OntapApiClient {
    */
   async deleteExportPolicy(nameOrId: string | number, svmName?: string): Promise<void> {
     let policyId: number;
-    
+
     if (typeof nameOrId === 'number' || /^\d+$/.test(nameOrId.toString())) {
       policyId = Number(nameOrId);
     } else {
       const policy = await this.getExportPolicy(nameOrId, svmName);
       policyId = policy.id!;
     }
-    
+
     await this.makeRequest(
       `/protocols/nfs/export-policies/${policyId}`,
       'DELETE'
@@ -728,16 +728,16 @@ export class OntapApiClient {
    */
   async listExportRules(policyNameOrId: string | number, svmName?: string, params?: ListExportRulesParams): Promise<ExportRule[]> {
     let policyId: number;
-    
+
     if (typeof policyNameOrId === 'number' || /^\d+$/.test(policyNameOrId.toString())) {
       policyId = Number(policyNameOrId);
     } else {
       const policy = await this.getExportPolicy(policyNameOrId, svmName);
       policyId = policy.id!;
     }
-    
+
     let endpoint = `/protocols/nfs/export-policies/${policyId}/rules?fields=index,clients,protocols,ro_rule,rw_rule,superuser,allow_device_creation,allow_suid,anonymous_user`;
-    
+
     if (params) {
       const queryParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
@@ -749,7 +749,7 @@ export class OntapApiClient {
         endpoint += `&${queryParams.toString()}`;
       }
     }
-    
+
     const response = await this.makeRequest<ExportRuleResponse>(endpoint);
     return response.records || [];
   }
@@ -759,14 +759,14 @@ export class OntapApiClient {
    */
   async addExportRule(policyNameOrId: string | number, rule: CreateExportRuleRequest, svmName?: string): Promise<{ index: number }> {
     let policyId: number;
-    
+
     if (typeof policyNameOrId === 'number' || /^\d+$/.test(policyNameOrId.toString())) {
       policyId = Number(policyNameOrId);
     } else {
       const policy = await this.getExportPolicy(policyNameOrId, svmName);
       policyId = policy.id!;
     }
-    
+
     const response = await this.makeRequest<{ index: number }>(
       `/protocols/nfs/export-policies/${policyId}/rules`,
       'POST',
@@ -779,20 +779,20 @@ export class OntapApiClient {
    * Update an existing export rule
    */
   async updateExportRule(
-    policyNameOrId: string | number, 
-    ruleIndex: number, 
-    updates: UpdateExportRuleRequest, 
+    policyNameOrId: string | number,
+    ruleIndex: number,
+    updates: UpdateExportRuleRequest,
     svmName?: string
   ): Promise<void> {
     let policyId: number;
-    
+
     if (typeof policyNameOrId === 'number' || /^\d+$/.test(policyNameOrId.toString())) {
       policyId = Number(policyNameOrId);
     } else {
       const policy = await this.getExportPolicy(policyNameOrId, svmName);
       policyId = policy.id!;
     }
-    
+
     await this.makeRequest(
       `/protocols/nfs/export-policies/${policyId}/rules/${ruleIndex}`,
       'PATCH',
@@ -804,19 +804,19 @@ export class OntapApiClient {
    * Delete an export rule from a policy
    */
   async deleteExportRule(
-    policyNameOrId: string | number, 
-    ruleIndex: number, 
+    policyNameOrId: string | number,
+    ruleIndex: number,
     svmName?: string
   ): Promise<void> {
     let policyId: number;
-    
+
     if (typeof policyNameOrId === 'number' || /^\d+$/.test(policyNameOrId.toString())) {
       policyId = Number(policyNameOrId);
     } else {
       const policy = await this.getExportPolicy(policyNameOrId, svmName);
       policyId = policy.id!;
     }
-    
+
     await this.makeRequest(
       `/protocols/nfs/export-policies/${policyId}/rules/${ruleIndex}`,
       'DELETE'
@@ -834,7 +834,7 @@ export class OntapApiClient {
         }
       }
     };
-    
+
     await this.makeRequest(
       `/storage/volumes/${volumeUuid}`,
       'PATCH',
@@ -853,7 +853,7 @@ export class OntapApiClient {
         }
       }
     };
-    
+
     await this.makeRequest(
       `/storage/volumes/${volumeUuid}`,
       'PATCH',
@@ -870,7 +870,7 @@ export class OntapApiClient {
         security_style: securityStyle
       }
     };
-    
+
     await this.makeRequest(
       `/storage/volumes/${volumeUuid}`,
       'PATCH',
@@ -886,7 +886,7 @@ export class OntapApiClient {
     const body = {
       size: sizeInBytes
     };
-    
+
     await this.makeRequest(
       `/storage/volumes/${volumeUuid}`,
       'PATCH',
@@ -901,7 +901,7 @@ export class OntapApiClient {
     const body = {
       comment: comment
     };
-    
+
     await this.makeRequest(
       `/storage/volumes/${volumeUuid}`,
       'PATCH',
@@ -976,7 +976,7 @@ export class OntapApiClient {
    */
   async listSnapshotSchedules(params?: any): Promise<any[]> {
     let endpoint = '/cluster/schedules?fields=uuid,name,type,cron,interval';
-    
+
     if (params) {
       const queryParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
@@ -988,7 +988,7 @@ export class OntapApiClient {
         endpoint += `&${queryParams.toString()}`;
       }
     }
-    
+
     const response = await this.makeRequest<{ records: any[] }>(endpoint);
     return response.records || [];
   }
@@ -998,13 +998,13 @@ export class OntapApiClient {
    */
   async getSnapshotSchedule(scheduleName: string): Promise<any> {
     const endpoint = `/cluster/schedules?name=${encodeURIComponent(scheduleName)}&fields=uuid,name,type,cron,interval`;
-    
+
     const response = await this.makeRequest<{ records: any[] }>(endpoint);
-    
+
     if (!response.records || response.records.length === 0) {
       throw new Error(`Snapshot schedule '${scheduleName}' not found`);
     }
-    
+
     return response.records[0];
   }
 
@@ -1026,7 +1026,7 @@ export class OntapApiClient {
   async updateSnapshotSchedule(scheduleName: string, updates: any): Promise<void> {
     // First get the schedule to get its UUID
     const schedule = await this.getSnapshotSchedule(scheduleName);
-    
+
     await this.makeRequest(
       `/cluster/schedules/${schedule.uuid}`,
       'PATCH',
@@ -1040,7 +1040,7 @@ export class OntapApiClient {
   async deleteSnapshotSchedule(scheduleName: string): Promise<void> {
     // First get the schedule to get its UUID
     const schedule = await this.getSnapshotSchedule(scheduleName);
-    
+
     await this.makeRequest(
       `/cluster/schedules/${schedule.uuid}`,
       'DELETE'
@@ -1056,7 +1056,7 @@ export class OntapApiClient {
    */
   async listCifsShares(params?: ListCifsSharesParams): Promise<CifsShareInfo[]> {
     let endpoint = '/protocols/cifs/shares?fields=name,path,svm,comment,volume';
-    
+
     if (params) {
       if (params['svm.name']) {
         endpoint += `&svm.name=${encodeURIComponent(params['svm.name'])}`;
@@ -1068,7 +1068,7 @@ export class OntapApiClient {
         endpoint += `&volume.name=${encodeURIComponent(params['volume.name'])}`;
       }
     }
-    
+
     const response = await this.makeRequest<CifsShareResponse>(endpoint);
     return response.records || [];
   }
@@ -1078,13 +1078,13 @@ export class OntapApiClient {
    */
   async getCifsShare(shareName: string, svmName: string): Promise<CifsShareInfo> {
     const endpoint = `/protocols/cifs/shares?name=${encodeURIComponent(shareName)}&svm.name=${encodeURIComponent(svmName)}&fields=name,path,svm,comment,volume,acls`;
-    
+
     const response = await this.makeRequest<CifsShareResponse>(endpoint);
-    
+
     if (!response.records || response.records.length === 0) {
       throw new Error(`CIFS share '${shareName}' not found in SVM '${svmName}'`);
     }
-    
+
     return response.records[0];
   }
 
@@ -1136,7 +1136,7 @@ export class OntapApiClient {
   async updateCifsShare(shareConfig: UpdateCifsShareRequest): Promise<void> {
     // First get the share to get SVM UUID
     const share = await this.getCifsShare(shareConfig.name, shareConfig.svm_name);
-    
+
     const body: any = {};
 
     if (shareConfig.comment !== undefined) {
@@ -1170,7 +1170,7 @@ export class OntapApiClient {
   async deleteCifsShare(params: DeleteCifsShareParams): Promise<void> {
     // First get the share to ensure it exists and get its full details
     const share = await this.getCifsShare(params.name, params.svm_name);
-    
+
     // Use query-based endpoint structure
     await this.makeRequest(
       `/protocols/cifs/shares?name=${encodeURIComponent(params.name)}&svm.uuid=${encodeURIComponent(share.svm!.uuid!)}`,
@@ -1186,13 +1186,13 @@ export class OntapApiClient {
   async updateCifsShareAcl(params: UpdateCifsShareAclParams): Promise<void> {
     // Get current share details
     const currentShare = await this.getCifsShare(params.name, params.svm_name);
-    
+
     // Delete the existing share
     await this.deleteCifsShare({
       name: params.name,
       svm_name: params.svm_name
     });
-    
+
     // Recreate the share with new ACLs
     await this.createCifsShare({
       name: params.name,
@@ -1209,9 +1209,9 @@ export class OntapApiClient {
   async getCifsShareAcl(shareName: string, svmName: string): Promise<any> {
     // First get the share to get SVM UUID
     const share = await this.getCifsShare(shareName, svmName);
-    
+
     const endpoint = `/protocols/cifs/shares/acls?name=${encodeURIComponent(shareName)}&svm.uuid=${encodeURIComponent(share.svm!.uuid!)}`;
-    
+
     const response = await this.makeRequest<{ records: any[] }>(endpoint);
     return response.records || [];
   }
@@ -1222,18 +1222,18 @@ export class OntapApiClient {
 
   /**
    * List QoS policies
-   * 
+   *
    * TEMPORARY WORKAROUND: The ONTAP REST API does not expose built-in QoS policy groups
    * that are available via CLI (qos policy-group show). Until we find the permanent
    * REST API solution, we hardcode the standard admin vserver policy groups:
    * - extreme-fixed: 0-50000IOPS,1.53GB/s
-   * - performance-fixed: 0-30000IOPS,937.5MB/s  
+   * - performance-fixed: 0-30000IOPS,937.5MB/s
    * - value-fixed: 0-15000IOPS,468.8MB/s
    */
-  async listQosPolicies(params?: { 
-    svmName?: string; 
-    policyNamePattern?: string; 
-    policyType?: 'fixed' | 'adaptive' 
+  async listQosPolicies(params?: {
+    svmName?: string;
+    policyNamePattern?: string;
+    policyType?: 'fixed' | 'adaptive'
   }): Promise<any[]> {
     let endpoint = '/storage/qos/policies';
     const queryParams: string[] = [];
@@ -1262,7 +1262,7 @@ export class OntapApiClient {
     // These built-in policy groups exist on the admin vserver but are not exposed via REST API
     const clusterInfo = await this.makeRequest<any>('/cluster');
     const adminVserverName = clusterInfo.name; // e.g., "C1_sti245-vsim-ocvs026a_1758285854"
-    
+
     const hardcodedAdminPolicies = [
       {
         uuid: `hardcoded-extreme-fixed-${adminVserverName.slice(-8)}`, // Fake UUID based on cluster
@@ -1319,7 +1319,7 @@ export class OntapApiClient {
 
     // Filter hardcoded policies based on SVM parameter
     let filteredHardcodedPolicies = hardcodedAdminPolicies;
-    
+
     if (params?.svmName) {
       // Only return hardcoded policies if the requested SVM is the admin vserver
       if (params.svmName === adminVserverName) {
@@ -1333,14 +1333,14 @@ export class OntapApiClient {
     // Filter by policy name pattern if specified
     if (params?.policyNamePattern) {
       const pattern = params.policyNamePattern.toLowerCase();
-      filteredHardcodedPolicies = filteredHardcodedPolicies.filter(policy => 
+      filteredHardcodedPolicies = filteredHardcodedPolicies.filter(policy =>
         policy.name.toLowerCase().includes(pattern)
       );
     }
 
     // Filter by policy type if specified
     if (params?.policyType) {
-      filteredHardcodedPolicies = filteredHardcodedPolicies.filter(policy => 
+      filteredHardcodedPolicies = filteredHardcodedPolicies.filter(policy =>
         policy.type === params.policyType
       );
     }
@@ -1367,7 +1367,7 @@ export class OntapApiClient {
     }
 
     const policies = await this.listQosPolicies(params);
-    
+
     if (policies.length === 0) {
       throw new Error(`QoS policy '${policyName}' not found${svmName ? ` in SVM ${svmName}` : ''}`);
     }
@@ -1402,7 +1402,7 @@ export class OntapApiClient {
         requestBody.fixed.max_throughput_iops = maxValue;
       }
     }
-    
+
     if (params.minThroughput) {
       const minValue = parseInt(params.minThroughput.replace(/[^0-9]/g, ''));
       if (!isNaN(minValue)) {
@@ -1474,7 +1474,7 @@ export class OntapApiClient {
 
     if (updates.maxThroughput || updates.minThroughput) {
       updateBody.fixed = {};
-      
+
       // Parse throughput values to extract numeric values (same as create method)
       if (updates.maxThroughput) {
         const maxValue = parseInt(updates.maxThroughput.replace(/[^0-9]/g, ''));
@@ -1482,7 +1482,7 @@ export class OntapApiClient {
           updateBody.fixed.max_throughput_iops = maxValue;
         }
       }
-      
+
       if (updates.minThroughput) {
         const minValue = parseInt(updates.minThroughput.replace(/[^0-9]/g, ''));
         if (!isNaN(minValue)) {
@@ -1584,12 +1584,12 @@ export class OntapApiClient {
    */
   async listVolumeSnapshots(params: ListVolumeSnapshotsParams): Promise<VolumeSnapshot[]> {
     let endpoint = `/storage/volumes/${params.volume_uuid}/snapshots?fields=uuid,name,create_time,size,volume`;
-    
+
     if (params.sort_by) {
       const orderPrefix = params.order === 'desc' ? '-' : '';
       endpoint += `&order_by=${orderPrefix}${params.sort_by}`;
     }
-    
+
     const response = await this.makeRequest<{ records: any[] }>(endpoint);
     return response.records || [];
   }
@@ -1621,11 +1621,11 @@ export class OntapApiClient {
   async findSnapshotByName(volumeUuid: string, snapshotName: string): Promise<VolumeSnapshot> {
     const endpoint = `/storage/volumes/${volumeUuid}/snapshots?name=${encodeURIComponent(snapshotName)}&fields=uuid,name`;
     const response = await this.makeRequest<VolumeSnapshotResponse>(endpoint);
-    
+
     if (!response.records || response.records.length === 0) {
       throw new Error(`Snapshot '${snapshotName}' not found on volume ${volumeUuid}`);
     }
-    
+
     return response.records[0];
   }
 
@@ -1668,7 +1668,7 @@ export class OntapApiClient {
     let url = '/security/key-managers?fields=*';
     if (params?.scope) url += `&scope=${params.scope}`;
     if (params?.svmName) url += `&svm.name=${encodeURIComponent(params.svmName)}`;
-    
+
     const response = await this.makeRequest<{ records: any[] }>(url);
     return response.records || [];
   }
@@ -1698,14 +1698,14 @@ export class OntapApiClient {
         servers: params.servers
       }
     };
-    
+
     if (params.svmUuid) {
       body.svm = { uuid: params.svmUuid };
     }
     if (params.policy) {
       body.policy = params.policy;
     }
-    
+
     const response = await this.makeRequest<{ records: any[] }>('/security/key-managers?return_records=true', 'POST', body);
     return { uuid: response.records[0].uuid };
   }
@@ -1723,7 +1723,7 @@ export class OntapApiClient {
         synchronize: params.synchronize
       }
     };
-    
+
     const response = await this.makeRequest<{ records: any[] }>('/security/key-managers?return_records=true', 'POST', body);
     return { uuid: response.records[0].uuid };
   }
@@ -1803,7 +1803,7 @@ export class OntapApiClient {
     let url = `/security/key-managers/${keyManagerUuid}/keys?fields=*`;
     if (params?.keyType) url += `&key_type=${params.keyType}`;
     if (params?.restored !== undefined) url += `&restored=${params.restored}`;
-    
+
     const response = await this.makeRequest<{ records: any[] }>(url);
     return response.records || [];
   }
