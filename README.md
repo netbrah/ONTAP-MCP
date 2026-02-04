@@ -2,6 +2,12 @@
 
 A simplified FastMCP-based HTTP SSE server for managing NetApp ONTAP encryption key infrastructure. This server provides 13 key manager tools via the Model Context Protocol (MCP).
 
+## 📚 Documentation
+
+- **[Quick Start Guide](QUICKSTART.md)** - Get running in 5 minutes
+- **[Usage Examples](EXAMPLES.md)** - Detailed examples and API calls
+- **[Transformation Details](TRANSFORMATION.md)** - Technical architecture changes
+
 ## 🚀 Quick Start
 
 ### Prerequisites
