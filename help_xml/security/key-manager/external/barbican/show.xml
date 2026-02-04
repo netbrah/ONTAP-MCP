@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/external/barbican/barbican_kms_ui.smf
+    table name: barbican_kms_ui
+-->
+<command>
+    <name>security key-manager external barbican show</name>
+    <description>This command displays the Barbican Key Management Service configuration
+    for a given Vserver.
+    </description>
+    <parameters>
+        <parameter>
+          <name>config</name>
+          <description>If this parameter is specified, the command displays the following information: <ul>
+            <li>verify</li>
+            <li>verify-host</li>
+            <li>proxy-type</li>
+            <li>proxy-host</li>
+            <li>proxy-port</li>
+            <li>proxy-username</li>
+            <li>timeout</li>
+          </ul></description>
+        </parameter>
+        <parameter>
+            <name>vserver</name>
+            <description>If you specify this parameter, then the command displays only the
+            Barbican configurations for the given Vserver.
+           </description>
+        </parameter>
+        <parameter>
+            <name>config-name</name>
+            <description>If you specify this parameter, then the command displays only the
+            Barbican configurations with the given configuration name.
+            </description>
+        </parameter>
+        <parameter>
+            <name>enabled</name>
+            <description>If you specify this parameter, then the command displays only the
+            Barbican configurations with the given enabled value.
+            </description>
+        </parameter>
+        <parameter>
+            <name>key-id</name>
+            <description>If you specify this parameter, then the command displays only the
+            Barbican configurations with the given key id.
+            </description>
+        </parameter>
+        <parameter>
+            <name>application-cred-id</name>
+            <description>If you specify this parameter, then the command displays only the
+            Barbican configurations with the given application credentials id.
+            </description>
+        </parameter>
+        <parameter>
+            <name>keystone-url</name>
+            <description>If you specify this parameter, then the command displays only the
+            Barbican configurations with the given Keystone authentication URL.
+            </description>
+        </parameter>
+        <parameter>
+            <name>verify</name>
+            <description>If you specify this parameter, then the command displays only the
+            Barbican configurations with the given verify value. The verify value can be either true
+            or false.
+            </description>
+        </parameter>
+        <parameter>
+            <name>verify-host</name>
+            <description>If you specify this parameter, then the command displays only the
+            Barbican configurations with the given verify-host value. The verify-host value can be
+            either true or false.
+            </description>
+        </parameter>
+        <parameter>
+            <name>proxy-type</name>
+            <description>If you specify this parameter, then the command displays only the
+            Barbican configurations with the given proxy-type value. The proxy-type value can
+            be either http or https.
+            </description>
+        </parameter>
+        <parameter>
+            <name>proxy-host</name>
+            <description>If you specify this parameter, then the command displays only the
+            Barbican configurations with the given proxy-host value.
+            </description>
+        </parameter>
+        <parameter>
+            <name>proxy-port</name>
+            <description>If you specify this parameter, then the command displays only the
+            Barbican configurations with the given proxy-port number.
+            </description>
+        </parameter>
+        <parameter>
+            <name>proxy-username</name>
+            <description>If you specify this parameter, then the command displays only the
+            Barbican configurations with the given proxy-username value.
+            </description>
+        </parameter>
+        <parameter>
+            <name>timeout</name>
+            <description>If you specify this parameter, then the command displays only the
+            Barbican configurations with the given timeout value.
+            </description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following example lists all Vservers with Barbican configurations.
+        </p>
+        <screen>
+cluster-1::*> security key-manager external barbican show
+
+                    Vserver: vsTest
+         Configuration Name: config1
+                     Key ID: https://sample.com:5000/v3
+ Application Credentials ID: app_cred_id
+               Keystone URL: https://sample.keystone.com:5000/v3
+                  Enabled? : false
+        </screen>
+        <p>The following example lists all fields in the configuration for the Vserver vsTest.</p>
+        <screen>
+cluster-1::*> security key-manager external barbican show -instance
+
+                                Vserver: vsTest
+                     Configuration Name: config1
+                        Barbican Key Id: https://sample.com:5000/v3
+    Keystone Application Credentials ID: app_cred_id
+             Keystone Authorization URL: https://sample.keystone.com:5000/v3
+              Verify the Barbican Host?: true
+   Verify the Barbican Host's Hostname?: true
+         Verify the Barbican Host's IP?: true
+                             Proxy Type: https
+                             Proxy Host:
+                             Proxy Port: 0
+                         Proxy Username:
+ Barbican Connection Timeout in Seconds: 10
+Is This Barbican Configuration Enabled?: false
+        </screen>
+    </example>
+</command>

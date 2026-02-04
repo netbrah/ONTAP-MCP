@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/keymanager/onboard/keymanager_onboard_disable.smf
+    table name: keymanager_onboard_disable
+-->
+<command>
+    <name>security key-manager onboard disable</name>
+    <description>This command disables the Onboard Key Manager associated with the admin Vserver and permanently deletes the Onboard Key Manager configuration associated with the admin Vserver. The Onboard Key Manager cannot be disabled if there are any encrypted volumes that use encryption keys created by the Onboard Key Manager. This command fails if the Onboard Key Manager is not enabled.
+</description>
+    <parameters>
+        <parameter>
+            <name>vserver</name>
+            <hide/>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following example disables the Onboard Key Manager for the admin Vserver: </p>
+        <screen>
+cluster-1::*> security key-manager onboard disable
+
+Warning: This command will permanently delete all keys from Onboard Key
+         Manager.
+Do you want to continue? {y|n}: y
+        </screen>
+    </example>
+</command>

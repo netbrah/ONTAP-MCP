@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/keymanager/external/keymanager_external_remove_servers.smf
+    table name: keymanager_external_remove_servers
+-->
+<command>
+    <name>security key-manager external remove-servers</name>
+    <description>This command removes the key management servers at the given
+    hosts and ports from the given Vserver's external key manager's list of
+    key management servers. If any of the specified key management servers is
+    the sole storage location for any key that is in use by ONTAP, then
+    you are unable to remove the key server. When removing key management
+    servers from the external key manager associated with the admin Vserver, you
+    must run the same command specifying the same set of key servers on the peer
+    cluster. When removing key management servers from a data Vserver, you can run
+    the <cmdname>security key-manager external remove-servers</cmdname> command on
+    the active cluster only as the the command is replicated on the peer cluster.
+    This command is not supported when external key management is not enabled
+    for the given Vserver. Use this command is remove primary key servers. To
+    modify the list of secondary key servers associated with a primary key
+    server, use the <cmdname>security key-manager external
+    modify-server</cmdname> command.
+    </description>
+    <parameters>
+        <parameter>
+            <name>vserver</name>
+            <description>Use this parameter to specify the Vserver on which the
+            external key manager is to be removed.</description>
+        </parameter>
+        <parameter>
+            <name>key-servers</name>
+            <description>Use this parameter to specify the list of key management
+            servers that you want to remove from the external key manager.
+            </description>
+        </parameter>
+        <parameter>
+            <name>force</name>
+            <description>Set this parameter to true to bypass checks for
+            out of quorum nodes.
+            </description>
+        </parameter>
+	</parameters>
+	<example>
+        <p>The following example removes the key management server
+		keyserver1.local, listening on the default port of 5696 and the
+		key management server at IP 10.0.0.20, listening on port of 15696.</p>
+		<screen>
+cluster-1::*> security key-manager external remove-servers -vserver cluster-1
+ -key-servers keyserver1.local,10.0.0.20:15696
+		</screen>
+	</example>
+</command>

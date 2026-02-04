@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/keymanager/key/keymanager_key_table.smf
+    table name: keymanager_key_table
+-->
+<command>
+    <name>security key-manager key key-table modify</name>
+    <description>This command modifies an entry in the key table. Changes made
+    using this command do not affect the key; only the table entry is modified,
+    not the key itself.
+    </description>
+    <parameters>
+        <parameter>
+            <name>key-id</name>
+            <description>This parameter specifies the key ID of the entry to be modified.
+            </description>
+        </parameter>
+        <parameter>
+            <name>key-type</name>
+            <description>If this optional parameter is specified, the key type field is modified accordingly.</description>
+        </parameter>
+        <parameter>
+            <name>encryption-algorithm</name>
+            <description>If this optional parameter is specified, the encryption algorithm field is modified accordingly.</description>
+        </parameter>
+        <parameter>
+            <name>creation-time</name>
+            <description>If this optional parameter is specified, the creation time field is modified accordingly.</description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following example shows the key table before and after the modify command:</p>
+        <screen>
+cluster-1::> security key-manager key key-table show
+
+Key ID                                                                            Key Type Encryption   Creation Time
+--------------------------------------------------------------------------------- -------- ------------ --------------------
+00000000000000000200000000000500e9ccf3f08e7533d9cd0298e1ebe6c1190000000000000000  VEK      XTS-AES-256  1/1/2022 10:00:00
+
+cluster-1::> security key-manager key key-table modify -key-id 00000000000000000200000000000500e9ccf3f08e7533d9cd0298e1ebe6c1190000000000000000 -creation-time "12/25/2022 00:00:00"
+
+cluster-1::> security key-manager key key-table show
+
+Key ID                                                                            Key Type Encryption   Creation Time
+--------------------------------------------------------------------------------- -------- ------------ --------------------
+00000000000000000200000000000500e9ccf3f08e7533d9cd0298e1ebe6c1190000000000000000  VEK      XTS-AES-256  12/25/2022 00:00:00
+        </screen>
+</example>
+</command>
+

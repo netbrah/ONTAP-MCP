@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/external/azure/azure_key_vault_ui.smf
+    table name: azure_key_vault_ui
+-->
+<command>
+    <name>security key-manager external azure enable</name>
+    <description><note>This command is deprecated and may be removed in a future release.
+    Use the <cmdname>security key-manager external azure create-config</cmdname> command to create an Azure Key Vault
+    configuration and the <cmdname>security key-manager keystore enable</cmdname> command to enable it instead.</note>
+    This command enables the Azure Key Vault (AKV) associated with
+    the given Vserver and creates a configuration
+    with the name "default". An Azure application and an AKV must be deployed on the
+    Azure portal prior to running this command. This command is not supported
+    for the admin Vserver, or if a key manager for the given data Vserver is already
+    enabled. This command is also not supported in a MetroCluster environment.
+    </description>
+    <parameters>
+        <parameter>
+            <name>vserver</name>
+            <description>Use this parameter to specify the Vserver on which the
+            AKV is to be enabled.</description>
+        </parameter>
+        <parameter>
+            <name>authentication-method</name>
+            <description>Use this parameter to specify either client_secret
+            authentication or certificate authentication for the deployed
+            AKV.</description>
+        </parameter>
+        <parameter>
+            <name>client-id</name>
+            <description>Use this parameter to specify the client (application)
+            ID of the deployed Azure application.</description>
+        </parameter>
+        <parameter>
+            <name>tenant-id</name>
+            <description>Use this parameter to specify the tenant (directory)
+            ID of the deployed Azure application.</description>
+        </parameter>
+        <parameter>
+            <name>name</name>
+            <description>Use this parameter to specify the DNS name of the
+            deployed AKV.</description>
+        </parameter>
+        <parameter>
+            <name>key-id</name>
+            <description>Use this parameter to specify the key identifier of
+            the AKV Key Encryption Key (KEK).</description>
+        </parameter>
+        <parameter>
+            <name>oauth-host</name>
+            <description>Use this parameter to specify the host name of the Open
+            Authorization server.</description>
+        </parameter>
+        <parameter>
+            <name>port</name>
+            <description>Use this parameter to specify the port of the deployed AKV.</description>
+        </parameter>
+        <parameter>
+            <name>verify</name>
+            <description>Use this parameter to specify whether to verify the identity of AKV.</description>
+        </parameter>
+        <parameter>
+            <name>verify-host</name>
+            <description>Use this parameter to specify whether to verify the identity of AKV hostname.</description>
+        </parameter>
+        <parameter>
+            <name>verify-ip</name>
+            <description>Use this parameter to specify whether to verify the identity of AKV ip address.</description>
+        </parameter>
+        <parameter>
+            <name>proxy-type</name>
+            <description>Use this parameter to specify the proxy type.</description>
+        </parameter>
+        <parameter>
+            <name>proxy-host</name>
+            <description>Use this parameter to specify the proxy hostname.</description>
+        </parameter>
+        <parameter>
+            <name>proxy-port</name>
+            <description>Use this parameter to specify the proxy port.</description>
+        </parameter>
+        <parameter>
+            <name>proxy-username</name>
+            <description>Use this parameter to specify the proxy username.</description>
+        </parameter>
+        <parameter>
+            <name>proxy-password</name>
+            <description>Use this parameter to specify the proxy password.</description>
+        </parameter>
+        <parameter>
+            <name>timeout</name>
+            <description>Use this parameter to specify the AKV connection timeout in seconds.</description>
+        </parameter>
+        <parameter>
+            <name>vault-host</name>
+            <description>Use this parameter to specify the AKV vault host.</description>
+        </parameter>
+        <parameter>
+            <name>polling-period</name>
+            <description>Use this parameter to specify the AKV polling period in seconds.</description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following example enables the AKV for Vserver v1. An Azure
+        application with client-id "4a0f9c98-c5aa-4275-abe3-2780cf2801c3",
+        tenant-id "8e21f23a-10b9-46fb-9d50-720ef604be98", client secret
+        (not echoed to the screen for security purposes), OAuth host at 10.12.34.1 and an AKV with
+        DNS name "https://akv-keyvault.vault.azure.net" is
+        deployed on the Azure portal. An AKV KEK with DNS name
+        "https://akv-keyvault.vault.azure.net/keys/key1/a8e619fd8f234db3b0b95c59540e2a74"
+        is created on the Azure portal for the AKV.
+        </p>
+        <screen>
+cluster-1::>security key-manager external azure enable -client-id 4a0f9c98-c5aa-4275-abe3-2780cf2801c3 -tenant-id 8e21f23a-10b9-46fb-9d50-720ef604be98 -name https://akv-keyvault.vault.azure.net -key-id https://akv-keyvault.vault.azure.net/keys/key1/a8e619fd8f234db3b0b95c59540e2a74 -authentication-method client_secret -vserver v1 -oauth-host 10.12.34.1
+
+Enter the client secret for Azure Key Vault:
+
+Re-enter the client secret for Azure Key Vault:
+        </screen>
+        <p>The following example enables the AKV for Vserver v1. An Azure
+        application with client-id "4a0f9c98-c5aa-4275-abe3-2780cf2801c3",
+        tenant-id "8e21f23a-10b9-46fb-9d50-720ef604be98", a client certificate
+        (not echoed to the screen for security purposes), OAuth host at 10.12.34.1 and an AKV with
+        DNS name "https://akv-keyvault.vault.azure.net" is
+        deployed on the Azure portal. An AKV KEK with DNS name
+        "https://akv-keyvault.vault.azure.net/keys/key1/a8e619fd8f234db3b0b95c59540e2a74"
+        is created on the Azure portal for the AKV.
+        </p>
+        <screen>
+cluster-1::>security key-manager external azure enable -client-id 4a0f9c98-c5aa-4275-abe3-2780cf2801c3 -tenant-id 8e21f23a-10b9-46fb-9d50-720ef604be98 -name https://akv-keyvault.vault.azure.net -key-id https://akv-keyvault.vault.azure.net/keys/key1/a8e619fd8f234db3b0b95c59540e2a74 -authentication-method certificate -vserver v1 -oauth-host 10.12.34.1
+
+Enter the client certificate for Azure Key Vault:
+        </screen>
+    </example>
+</command>

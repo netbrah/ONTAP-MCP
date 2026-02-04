@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/keymanager/external/keymanager_external_create_config.smf
+    table name: keymanager_external_create_config
+-->
+<command>
+    <name>security key-manager external create-config</name>
+    <description>This command enables an ONTAP administrator to create an inactive external key manager configuration for the admin Vserver. This facilitates the switching between the Onboard Key Manager (OKM) and an external key manager (EKM) without migrating the keys to a data SVM.</description>
+    <parameters>
+        <parameter>
+            <name>vserver</name>
+            <description>Use this parameter to specify the Vserver on which the external key manager configuration is to be created.</description>
+        </parameter>
+        <parameter>
+            <name>config-name</name>
+            <description>Use this parameter to specify the name of the configuration. Note that the name "default" is reserved and cannot be used.</description>
+        </parameter>
+        <parameter>
+            <name>key-servers</name>
+            <description>Use this parameter to specify a list of up to four key management servers that the external key manager will use to store keys.</description>
+        </parameter>
+        <parameter>
+            <name>client-cert</name>
+            <description>Use this parameter to specify the unique name of the client certificate that the key management servers will use to verify the identity of the ONTAP client.</description>
+        </parameter>
+        <parameter>
+            <name>server-ca-certs</name>
+            <description>Use this parameter to specify the unique names of server-ca certificates that ONTAP will use to verify the identity of the key management servers.</description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following example creates an inactive external key manager configuration for Vserver cluster-1 with the configuration name "default". The command includes three key management servers. The first key server's hostname is ks1.local and is listening on port 5696. The second key server's IP address is 10.0.0.10 and is listening on the default port 5696. The third key server's IPv6 address is fd20:8b1e:b255:814e:32bd:f35c:832c:5a09, and is listening on port 5696.</p>
+        <screen>
+cluster-1::> security key-manager external create-config -vserver cluster-1 -key-servers ks1.local:5696,10.0.0.10,[fd20:8b1e:b255:814e:32bd:f35c:832c:5a09]:5696 -client-cert AdminVserverClientCert -server-ca-certs ServerCaCert1,ServerCaCert2
+        </screen>
+    </example>
+</command>

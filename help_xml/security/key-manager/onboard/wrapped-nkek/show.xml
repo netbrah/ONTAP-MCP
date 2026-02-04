@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/keymanager/onboard/keymanager_onboard_wrapped_nkek.smf
+    table name: keymanager_onboard_wrapped_nkek
+-->
+<command>
+    <name>security key-manager onboard wrapped-nkek show</name>
+    <description>This command displays the wrapped Node Key Encryption Key (NKEK) (public and private blobs).
+    </description>
+    <parameters>
+        <parameter>
+            <name>node</name>
+            <description>If you specify this parameter, then the command displays only the
+            wrapped Node Key Encryption Key (public and private blobs) for the given node(s).
+           </description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following example displays the wrapped Node Key Encryption Key (public and private blobs) on all nodes.
+        </p>
+        <screen>
+cluster-1::*>security key-manager onboard wrapped-nkek show
+             Node : node1
+ Public NKEK BLOB : 002e0008000b00000440000000100020f4eab8ba85c00f81f4d6a7f3f430adbc1081354bcfc8e1dde8a0d872e23836ca
+Private NKEK BLOB : 009e00202a0ca09437db85c284329912d99c8fd48baf078017aa2210bb2e4fb0750cef9c001003c9e7a04c302ebd748ad6d524d16023426396f49745896929c5e587b124ffe7037938b6770c11ad72b726125168f90a93e194e1872457c7084856e91d8277be1ce0831bc85fd9561c8978930486cfe946d7e062ffe824a64eac83ab4a1814d93d4efbfc51b46a43a67a251349d36cc21fe3d56248c2484a3fad
+  Is wkeydb match : true
+             Node : node2
+ Public NKEK BLOB : 002e0008000b0000044000000010002011e9bf902e0d31418294abe18e8d5b5d959c51b5defcd6e1cb2e64be7e9a4c41
+Private NKEK BLOB : 009e0020d70cc32db04b69a42fe2fc79ed7199017c0b9bfa13cd66a84dfa3ccff0e95178001003c9e7a04c302ebd748ad6d524d1602384afe622080c094ae0f8161292a3d58392fa0e06efe625158126d0c3ef6d664ef7342b88729b45cb070ed75b87c4c8830635ac70e0ca8560bd09c881efb4fb5c3c28ca5b4c0bdae02b1f43e99b472ce12138d030dbda97e70c8fbbe3fc51aa72877e7750b0f45bd7ae66
+  Is wkeydb match : true
+        </screen>
+    </example>
+</command>

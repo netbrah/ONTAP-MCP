@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/key/keymanager_key_query.smf
+    table name: keymanager_key_query
+-->
+<command>
+    <name>security key-manager key query</name>
+    <description>This command displays the IDs of the keys that are stored in
+    the configured key managers. This command does not update the key
+    tables on the node. Primary key servers, along with any associated
+    secondary key servers, are displayed in the output.
+    </description>
+    <parameters>
+        <parameter>
+            <name>node</name>
+            <description>Use this parameter to specify the name of the node that
+            queries the specified key management servers. If this parameter is
+            not specified, then all nodes query the specified key
+            management servers.</description>
+        </parameter>
+        <parameter>
+            <name>vserver</name>
+            <description>Use this parameter to specify the Vserver for which
+            to list the keys.</description>
+        </parameter>
+        <parameter>
+            <name>key-store</name>
+            <description>Use this parameter to specify the key manager type
+            from which to list the keys.</description>
+        </parameter>
+        <parameter>
+            <name>key-server</name>
+            <description>This parameter specifies the host and port of the
+            key management server that you want to query. This parameter
+            is used only with external key managers.</description>
+        </parameter>
+        <parameter>
+            <name>key-id</name>
+            <description>If you specify this parameter, then the command displays
+            only the key IDs that match the specified value.</description>
+        </parameter>
+        <parameter>
+            <name>key-tag</name>
+            <description>If you specify this parameter, then the command
+            displays only the key IDs that match the specified value. The
+            key-tag for Volume Encryption Keys (VEKs) is set to the UUID
+            of the encrypted volume.</description>
+        </parameter>
+        <parameter>
+            <name>key-type</name>
+            <description>If you specify this parameter, then the command
+            displays only the key IDs that match the specified value.</description>
+        </parameter>
+        <parameter>
+            <name>restored</name>
+            <description>This parameter specifies whether the key corresponding
+            to the displayed key ID is present in the specified node's internal
+            key table. If you specify 'true' for this parameter, then the command
+            displays the key IDs of only those keys that are present in the
+            system's internal key table.  If you specify 'false' for this
+            parameter, then the command displays the key IDs of only those keys
+            that are not present in the system's internal key table.</description>
+        </parameter>
+        <parameter>
+            <name>key-user</name>
+            <description>If you specify this parameter, then the command displays
+            only the key IDs that are used by the specified Vserver.</description>
+        </parameter>
+        <parameter>
+            <name>key-store-type</name>
+            <description>If you specify this parameter, then the command displays
+            only the key IDs that are used by the specified key manager type.</description>
+        </parameter>
+        <parameter>
+            <name>key-manager</name>
+            <description>This parameter specifies the identity of the key manager. For external
+            key managers that will be the host and the port of the key server. In other cases
+            that will be the name of a corresponding key manager.</description>
+        </parameter>
+        <parameter>
+            <name>crn</name>
+            <description>This parameter specifies the Cloud Resource Name (CRN) of
+            the key. If you specify this parameter, then the command displays only
+            the key IDs that contains such CRN.</description>
+        </parameter>
+        <parameter>
+            <name>policy</name>
+            <description>This optional parameter specifies the policy name of the key manager.
+            If you specify this parameter, then the command displays only the key IDs that are
+            associated with the specified policy.</description>
+        </parameter>
+        <parameter>
+            <name>encryption-algorithm</name>
+            <description>This optional parameter specifies the encryption algorithm of the key.
+            If you specify this parameter, then the command displays only the keys of the specified
+            algorithm type.
+            </description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following example shows all of the keys on all configured key
+        servers, and whether or not those keys have been restored for all nodes
+        in the cluster:</p>
+        <screen>
+cluster-1::> security key-manager key query
+
+               Node: node1
+            Vserver: cluster-1
+        Key Manager: onboard
+   Key Manager Type: OKM
+
+Key Tag                               Key Type Encryption   Restored
+------------------------------------  -------- ------------ --------
+node1                                 NSE-AK   AES-256      true
+    Key ID: 000000000000000002000000000001000c11b3863f78c2273343d7ec5a67762e0000000000000000
+node1                                 NSE-AK   AES-256      true
+    Key ID: 000000000000000002000000000001006f4e2513353a674305872a4c9f3bf7970000000000000000
+node1                                 NSE-AK   AES-256      true
+    Key ID: 00000000000000000200000000000100e1f6b27094485d2d74408bca673b25eb0000000000000000
+node1                                 NSE-AK   AES-256      true
+    Key ID: 00000000000000000200000000000100ea73be83ec42a7a2bd262f369cda83a40000000000000000
+
+               Node: node1
+            Vserver: datavs
+        Key Manager: keyserver.datavs.com:5965
+   Key Manager Type: KMIP
+
+Key Tag                               Key Type Encryption   Restored
+------------------------------------  -------- ------------ --------
+eb9f8311-e8d8-487e-9663-7642d7788a75  VEK      XTS-AES-256  true
+    Key ID: 0000000000000000020000000000004001cb18336f7c8223743d3e75c6a7726e0000000000000000
+9d09cbbf-0da9-4696-87a1-8e083d8261bb  VEK      XTS-AES-256  true
+    Key ID: 0000000000000000020000000000004064f2e1533356a470385274a9c3ffb9770000000000000000
+40c3546e-600c-401c-b312-f01be52258dd  VEK      XTS-AES-256  true
+    Key ID: 000000000000000002000000000000401e6f2b09744582d74d084cb6a372be5b0000000000000000
+9b195ecb-35ee-4d11-8f61-15a8de377ad7  VEK      XTS-AES-256  true
+    Key ID: 00000000000000000200000000000040ea73be83ec42a7a2bd262f369cda83a40000000000000000
+
+               Node: node2
+            Vserver: cluster-1
+        Key Manager: onboard
+   Key Manager Type: OKM
+
+Key Tag                               Key Type Encryption   Restored
+------------------------------------  -------- ------------ --------
+node1                                 NSE-AK   AES-256      true
+    Key ID: 000000000000000002000000000001000c11b3863f78c2273343d7ec5a67762e0000000000000000
+node1                                 NSE-AK   AES-256      true
+    Key ID: 000000000000000002000000000001006f4e2513353a674305872a4c9f3bf7970000000000000000
+node1                                 NSE-AK   AES-256      true
+    Key ID: 00000000000000000200000000000100e1f6b27094485d2d74408bca673b25eb0000000000000000
+node1                                 NSE-AK   AES-256      true
+    Key ID: 00000000000000000200000000000100ea73be83ec42a7a2bd262f369cda83a40000000000000000
+
+               Node: node2
+            Vserver: datavs
+        Key Manager: keyserver.datavs.com:5965
+   Key Manager Type: KMIP
+
+Key Tag                               Key Type Encryption   Restored
+------------------------------------  -------- ------------ --------
+eb9f8311-e8d8-487e-9663-7642d7788a75  VEK      XTS-AES-256  true
+    Key ID: 0000000000000000020000000000004001cb18336f7c8223743d3e75c6a7726e0000000000000000
+9d09cbbf-0da9-4696-87a1-8e083d8261bb  VEK      XTS-AES-256  true
+    Key ID: 0000000000000000020000000000004064f2e1533356a470385274a9c3ffb9770000000000000000
+40c3546e-600c-401c-b312-f01be52258dd  VEK      XTS-AES-256  true
+    Key ID: 000000000000000002000000000000401e6f2b09744582d74d084cb6a372be5b0000000000000000
+9b195ecb-35ee-4d11-8f61-15a8de377ad7  VEK      XTS-AES-256  true
+    Key ID: 00000000000000000200000000000040ea73be83ec42a7a2bd262f369cda83a40000000000000000
+        </screen>
+    </example>
+</command>

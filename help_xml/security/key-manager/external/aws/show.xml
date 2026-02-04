@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/external/aws/aws_kms_ui.smf
+    table name: aws_kms_ui
+-->
+<command>
+    <name>security key-manager external aws show</name>
+    <description>This command displays the Amazon Web Service Key Management Service (AWSKMS) configuration
+    for a given Vserver.
+    </description>
+    <parameters>
+        <parameter>
+            <name>vserver</name>
+            <description>If you specify this parameter, then the command displays only the
+            AWSKMS configuration for the given Vserver.
+        </description>
+        </parameter>
+        <parameter>
+            <name>region</name>
+            <description>If you specify this parameter, then the command displays only the
+            AWSKMS configuration with the given region.
+            </description>
+        </parameter>
+        <parameter>
+            <name>access-key-id</name>
+            <description>If you specify this parameter, then the command displays only the
+            AWSKMS configuration with the given access key ID.
+            </description>
+        </parameter>
+        <parameter>
+            <name>state</name>
+            <description>If you specify this parameter, then the command displays only the
+            AWSKMS configurations with the given state. The state can be either
+            available or unknown.
+            </description>
+        </parameter>
+        <parameter>
+            <name>unavailable-nodes</name>
+            <description>If you specify this parameter, then the command displays only the
+            AWSKMS configurations with the given unavailable-nodes.
+            </description>
+        </parameter>
+        <parameter>
+            <name>key-id</name>
+            <description>If you specify this parameter, then the command displays only the
+            AWSKMS configuration with the given key-id.
+            </description>
+        </parameter>
+        <parameter>
+            <name>service</name>
+            <description>If you specify this parameter, then the command displays only the
+            AWSKMS configurations with the given AWS service type.
+            </description>
+        </parameter>
+        <parameter>
+            <name>default-domain</name>
+            <description>If you specify this parameter, then the command displays only the
+            AWSKMS configurations with the given AWS KMS default domain.
+            </description>
+        </parameter>
+        <parameter>
+            <name>polling-period</name>
+            <description>If you specify this parameter, then the command displays only the
+            AWSKMS configurations with the given polling period.
+            </description>
+        </parameter>
+        <parameter>
+            <name>port</name>
+            <description>If you specify this parameter, then the command displays only the
+            AWSKMS configurations with the given AWS KMS port.
+            </description>
+        </parameter>
+        <parameter>
+            <name>host</name>
+            <description>If you specify this parameter, then the command displays only the
+            AWSKMS configurations with the given AWS KMS host name.
+            </description>
+        </parameter>
+        <parameter>
+            <name>verify</name>
+            <description>If you specify this parameter, then the command displays only the
+            AWSKMS configurations with the given value of the verify flag.
+            </description>
+        </parameter>
+        <parameter>
+            <name>verify-host</name>
+            <description>If you specify this parameter, then the command displays only the
+            AWSKMS configurations with the given value of the verify-host flag.
+            </description>
+        </parameter>
+        <parameter>
+            <name>verify-ip</name>
+            <description>If you specify this parameter, then the command displays only the
+            AWSKMS configurations with the given value of the verify-ip flag.
+            </description>
+        </parameter>
+       <parameter>
+            <name>encryption-context</name>
+            <description>If you specify this parameter, then the command displays only the
+            AWSKMS configurations with the given value of the AWS encryption-context. The
+            parameter should be in JSON format.
+            </description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following example lists all AWSKMS configurations.
+        </p>
+        <screen>
+cluster-1::>security key-manager external aws show
+            Vserver: SAMPLE_VSERVER
+             Region: SAMPLE_NA_REGION
+
+Access Key Id                                State
+------------------------------------------   -------
+SAMPLE_ACCESS_KEY_ID                         unknown
+SAMPLE_ACCESS_KEY_ID_2                       unknown
+Unavailable Nodes:                           node1
+        </screen>
+        <p>The following example lists the AWSKMS configurations that have the given
+        encryption context of "{"team": "NVEsecurity"}".
+        </p>
+        <screen>
+cluster-1::>security key-manager external aws show -encryption-context {"team": "NVEsecurity"}
+            Vserver: SAMPLE_VSERVER
+             Region: SAMPLE_NA_REGION
+
+Access Key Id                                State
+------------------------------------------   -------
+SAMPLE_ACCESS_KEY_ID                         unknown
+Unavailable Nodes:                           node1
+        </screen>
+    </example>
+</command>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/keymanager_keystore_enable.smf
+    table name: keymanager_keystore_enable
+-->
+<command>
+    <name>security key-manager keystore enable</name>
+    <description>This command enables the keystore represented by the supplied Vserver,
+    keystore-type, and config-name combination. If the specified Vserver already has a keystore
+    enabled, then the enabled configuration is switched to the desired keystore configuration
+    and the previous configuration is left in an inactive/disabled state.
+    </description>
+    <parameters>
+        <parameter>
+            <name>vserver</name>
+            <description>Use this parameter to specify the Vserver of the desired configuration.</description>
+        </parameter>
+        <parameter>
+            <name>keystore-type</name>
+            <description>Use this parameter to specify the keystore type of the desired configuration.</description>
+        </parameter>
+        <parameter>
+            <name>config-name</name>
+            <description>Use this parameter to specify the configuration name of the desired configuration.</description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following example enables a configuration named sampleConfig for the configured AKV on Vserver vsTest.</p>
+        <screen>
+cluster-1::> security key-manager keystore enable -vserver vsTest -keystore-type AKV -config-name sampleConfig
+        </screen>
+        <p>The following example switches the configuration on Vserver vsTest to a new keystore configuration named newConfig.</p>
+        <screen>
+cluster-1::> security key-manager keystore enable -vserver vsTest -keystore-type AKV -config-name newConfig
+        </screen>
+    </example>
+</command>

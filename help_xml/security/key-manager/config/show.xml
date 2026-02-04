@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/keymanager_config.smf
+    table name: keymanager_config
+-->
+<command>
+    <name>security key-manager config show</name>
+    <description><p>This command displays the key management configuration
+    options.</p>
+    <p>The "cc-mode-enabled" option reflects the current configuration state
+    for Common-Criteria (CC) mode for the Onboard Key Manager.  CC mode is an
+    operational mode that enforces some of the policies required by the Common
+    Criteria "Collaborative Protection Profile for Full Drive
+    Encryption-Authorization Acquisition" (FDE-AA cPP) and "Collaborative
+    Protection Profile for Full Drive Encryption-Encryption Engine"
+    documents.  The feature can be enabled when the Onboard Key Manager is
+    configured using the <cmdname>security key-manager setup</cmdname> command
+    or after the Onboard Key Manager is configured using the
+    <cmdname>security key-manager config modify</cmdname> command.</p>
+    <!--
+    <p>The (privilege: diagnostic) "okm-on-usb-enabled" option reflects the
+    current configuration state for OKM-on-USB for the Onboard Key Manager. If
+    all nodes in the cluster support external mass storage devices, then the
+    okm-on-usb-enabled option reflects whether or not that feature has been
+    enabled.  The feature can be enabled when the Onboard Key Manager is
+    configured using the <cmdname>security key-manager setup</cmdname> command
+    or after the Onboard Key Manager is configured using the
+    <cmdname>security key-manager config modify</cmdname> command.</p>
+    -->
+    </description>
+    <example>
+        <p>The following example displays the state of all key-manager
+        configuration options:</p>
+        <screen>
+cluster-1::*> security key-manager config show
+CC-Mode  health-monitor-polling-interval  cloud-kms-retry-count
+Enabled  (in minutes)
+-------  ------------                     ---------------------
+true     30                               0
+        </screen>
+    </example>
+</command>

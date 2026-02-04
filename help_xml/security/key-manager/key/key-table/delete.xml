@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/keymanager/key/keymanager_key_table.smf
+    table name: keymanager_key_table
+-->
+<command>
+    <name>security key-manager key key-table delete</name>
+    <description>This command removes an entry from the key table.</description>
+    <parameters>
+        <parameter>
+            <name>key-id</name>
+            <description>Use this parameter to specify the key ID of the entry that you
+            want to remove from the key table.</description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following example deletes an entry from the key table:</p>
+        <screen>
+cluster-1::> security key-manager key key-table show
+
+Key ID                                                                            Key Type Encryption   Creation Time
+--------------------------------------------------------------------------------- -------- ------------ --------------------
+00000000000000000200000000000100239c17902e7515ed397892f75f52e38e0000000000000000  NSE-AK   AES-256      2/8/2022 10:54:46
+00000000000000000200000000000a00a7af571b8397e7df297128fdeb83f4ba0000000000000000  SVM-KEK  AES-256      1/1/2022 01:01:59
+2 entries were displayed.
+
+cluster-1::*> security key-manager key key-table delete -key-id 00000000000000000200000000000100239c17902e7515ed397892f75f52e38e0000000000000000
+
+cluster-1::> security key-manager key key-table show
+
+Key ID                                                                            Key Type Encryption   Creation Time
+--------------------------------------------------------------------------------- -------- ------------ --------------------
+00000000000000000200000000000a00a7af571b8397e7df297128fdeb83f4ba0000000000000000  SVM-KEK  AES-256      1/1/2022 01:01:59
+1 entry was displayed.
+
+        </screen>
+</example>
+</command>
+

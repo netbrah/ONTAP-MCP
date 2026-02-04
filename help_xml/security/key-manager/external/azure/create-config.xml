@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/external/azure/azure_key_vault_ui.smf
+    table name: azure_key_vault_ui
+-->
+<command>
+    <name>security key-manager external azure create-config</name>
+    <description>
+        This command creates an Azure Key Vault (AKV) configuration which can be enabled on a Vserver.
+    </description>
+    <parameters>
+        <parameter>
+            <name>vserver</name>
+            <description>
+                The name of the Vserver.
+            </description>
+        </parameter>
+        <parameter>
+            <name>config-name</name>
+            <description>
+                The name of the configuration.
+            </description>
+        </parameter>
+        <parameter>
+            <name>client-id</name>
+            <description>
+                The ID of the client.
+            </description>
+        </parameter>
+        <parameter>
+            <name>tenant-id</name>
+            <description>
+                The ID of the tenant.
+            </description>
+        </parameter>
+        <parameter>
+            <name>name</name>
+            <description>
+                The DNS name of the deployed AKV .
+            </description>
+        </parameter>
+        <parameter>
+            <name>key-id</name>
+            <description>
+                The ID of the key.
+            </description>
+        </parameter>
+        <parameter>
+            <name>oauth-host</name>
+            <description>
+                The hostname of the OAuth server.
+            </description>
+        </parameter>
+        <parameter>
+            <name>authentication-method</name>
+            <description>
+                Use this parameter to specify the authentication method.
+            </description>
+        </parameter>
+        <parameter>
+            <name>port</name>
+            <description>Use this parameter to specify the port of the deployed AKV.</description>
+        </parameter>
+        <parameter>
+            <name>vault-host</name>
+            <description>Use this parameter to specify the AKV vault host.</description>
+        </parameter>
+        <parameter>
+            <name>verify</name>
+            <description>Use this parameter to specify whether to verify the identity of AKV.</description>
+        </parameter>
+        <parameter>
+            <name>verify-host</name>
+            <description>Use this parameter to specify whether to verify the identity of AKV hostname.</description>
+        </parameter>
+        <parameter>
+            <name>verify-ip</name>
+            <description>Use this parameter to specify whether to verify the identity of AKV ip address.</description>
+        </parameter>
+        <parameter>
+            <name>proxy-type</name>
+        <description>Use this parameter to specify the proxy type.</description>
+        </parameter>
+        <parameter>
+            <name>proxy-host</name>
+        <description>Use this parameter to specify the proxy host.</description>
+        </parameter>
+        <parameter>
+            <name>proxy-port</name>
+        <description>Use this parameter to specify the proxy port.</description>
+        </parameter>
+        <parameter>
+            <name>proxy-username</name>
+        <description>Use this parameter to specify the proxy username.</description>
+        </parameter>
+        <parameter>
+            <name>proxy-password</name>
+        <description>Use this parameter to specify the proxy password.</description>
+        </parameter>
+        <parameter>
+            <name>timeout</name>
+        <description>Use this parameter to specify the timeout, in seconds,
+            for attempting to connect to the deployed AKV.</description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The example below creates a configuration on a node with the following details:
+            Configuration name: sampleConfig, Client ID: client1, Tenant ID: tenant1, Deployed AKV name: https://samplevault.vault.azure.net,
+            Key ID: https://samplevault.vault.azure.net/keys/key1/keyversion, OAuth Host: https://sampleoauth.net, for Vserver vsTest.</p>
+        <screen>
+cluster-1::> security key-manager external azure create-config -config-name sampleConfig -client-id client1 -tenant-id tenant1 -name https://samplevault.vault.azure.net -key-id https://samplevault.vault.azure.net/keys/key1/keyversion -oauth-host https://sampleoauth.net -vserver vsTest
+        </screen>
+    </example>
+</command>

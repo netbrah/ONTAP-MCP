@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/keymanager/keymanager_key_policy.smf
+    table name: keymanager_external
+-->
+<command>
+    <name>security key-manager policy show</name>
+    <description>This command displays the defined key management key policies.
+    </description>
+    <parameters>
+        <parameter>
+            <name>policy</name>
+            <description>If you specify this parameter, then the command will
+            list the key manager policy with the given name.
+            </description>
+        </parameter>
+        <parameter>
+            <name>check-key-on-online</name>
+            <description>If you specify this parameter, then the command
+            displays only the key manager policies with the given
+            check-key-on-online value.
+            </description>
+        </parameter>
+        <parameter>
+            <name>purge-key-on-offline</name>
+            <description>If you specify this parameter, then the command
+            displays only the key manager policies with the given
+            purge-key-on-offline value.
+            </description>
+        </parameter>
+        <parameter>
+            <name>support-on-admin-vserver</name>
+            <description>If you specify this parameter, then the command
+            displays only the key manager policies with the given
+            support-on-admin-vserver value.
+            </description>
+        </parameter>
+        <parameter>
+            <name>key-manager-attribute-required</name>
+            <description>If you specify this parameter, then the command
+            displays only the key manager policies with the given
+            key-manager-attribute-required value.
+            </description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following example lists all configured key management policies:</p>
+        <screen>
+cluster-1::*> security key-manager policy show
+
+Policy             Check Key on Online?  Purge Key on Offline?
+-----------------  --------------------  ---------------------
+IBM_Key_Lore       true                  true
+        </screen>
+    </example>
+</command>

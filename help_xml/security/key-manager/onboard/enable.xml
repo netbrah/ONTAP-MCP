@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/keymanager/onboard/keymanager_onboard_enable.smf
+    table name: keymanager_onboard_enable
+-->
+<command>
+    <name>security key-manager onboard enable</name>
+    <description>This command enables the Onboard Key Manager for the admin Vserver.
+    </description>
+    <parameters>
+        <parameter>
+            <name>vserver</name>
+            <hide/>
+        </parameter>
+        <parameter>
+            <name>cc-mode-enabled</name>
+            <description>
+            This parameter is deprecated and may be removed in a future
+            release of ONTAP. Use "security key-manager config modify"
+            instead. Use this parameter to specify whether the Common Criteria
+            (CC) mode should be enabled or not. When CC mode is enabled, you
+            are required to provide a cluster passphrase that is between 64 and
+            256 ASCII characters long, and you are required to enter that
+            passphrase each time a node reboots. CC mode cannot be enabled in a
+            MetroCluster configuration.
+            </description>
+        </parameter>
+        <parameter>
+            <name>are-unencrypted-metadata-volumes-allowed-in-cc-mode</name>
+            <description>
+            This parameter is deprecated and may be removed in a future
+            release of ONTAP. Use "security key-manager config modify"
+            instead. If Common Criteria (CC) mode is enabled this parameter
+            allows unencrypted metadata volumes to exist. These metadata volumes
+            are created internally during normal operation. Examples are volumes
+            created during SnapMirror and Vserver migrate operations. the
+            default value is <varname>no</varname>.
+            </description>
+        </parameter>
+        <parameter>
+            <name>okm-on-usb-enabled</name>
+            <!--
+            <description>This parameter modifies the configuration state of
+            the Onboard Key Manager (OKM) on an external USB mass storage
+            device.</description>
+            -->
+            <hide/>
+        </parameter>
+        <parameter>
+            <name>onboard-passphrase</name>
+            <description>The Onboard Key Manager cluster-wide passphrase.</description>
+        </parameter>
+        <parameter>
+            <name>keystore-uuid</name>
+            <description>Specify the UUID of the key manager.</description>
+    </parameter>
+    </parameters>
+    <example>
+        <p>The following example enables the Onboard Key Manager for the admin Vserver cluster-1: </p>
+        <screen>
+cluster-1::> security key-manager onboard enable
+
+Enter the cluster-wide passphrase for the Onboard Key Manager:
+
+Re-enter the cluster-wide passphrase:
+
+After configuring the Onboard Key Manager, save the encrypted configuration data in a safe location so that you can use it if you need to perform a manual recovery operation. To view the data, use the "security key-manager onboard show-backup" command.
+        </screen>
+        <p>The following example enables the Onboard Key Manager for the admin Vserver cluster-1 with the cluster-wide passphrase "myPassphrase" on an external USB mass storage device: </p>
+        <screen>
+cluster-1::> security key-manager onboard enable -vserver cluster-1 -okm-on-usb-enabled true -onboard-passphrase myPassphrase
+
+Enter the cluster-wide passphrase for the Onboard Key Manager:
+
+Re-enter the cluster-wide passphrase:
+After configuring the Onboard Key Manager, save the encrypted configuration data in a safe location so that you can use it if you need to perform a manual recovery operation. To view the data, use the "security key-manager onboard show-backup" command.
+        </screen>
+    </example>
+</command>

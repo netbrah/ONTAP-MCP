@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/keymanager_keystore_revert.smf
+    table name: keymanager_keystore_revert
+-->
+<command>
+    <name>security key-manager keystore revert</name>
+    <description>This command reverts the keystore configuration to a previous state.
+    </description>
+    <parameters>
+        <parameter>
+            <name>vserver</name>
+            <description>Use this parameter to specify the Vserver to revert.</description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following example reverts all vservers to a previous state.</p>
+        <screen>
+cluster-1::> security key-manager keystore revert
+        </screen>
+    </example>
+</command>

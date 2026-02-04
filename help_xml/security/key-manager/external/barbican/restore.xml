@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/external/barbican/barbican_restore.smf
+    table name: barbican_restore
+-->
+<command>
+    <name>security key-manager external barbican restore</name>
+    <description>This command retrieves and restores the top level SVM key encryption key associated with the
+     given Vserver to each of the node's internal key tables. This command is not supported when Barbican configuration is not enabled for the Vserver.
+    </description>
+    <parameters>
+        <parameter>
+            <name>vserver</name>
+            <description>This parameter specifies the Vserver to which the missing SVM Key encryption key will be
+            restored.</description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following command restores the missing SVM Key encryption key for the data vserver v1 (which has a Barbican
+           configuration) to the internal key tables of each node in the cluster.
+        </p>
+        <screen>
+cluster-1::> security key-manager external barbican restore -vserver v1
+
+        </screen>
+    </example>
+</command>

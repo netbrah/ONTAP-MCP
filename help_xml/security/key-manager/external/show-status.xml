@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/keymanager/external/keymanager_external_show_status.smf
+    table name: keymanager_external_show_status
+-->
+
+<command>
+    <name>security key-manager external show-status</name>
+    <description>This command displays connectivity information between ONTAP nodes and configured external key management servers.
+    </description>
+    <parameters>
+        <parameter>
+            <name>node</name>
+            <description>If you specify this parameter, then the command displays the connectivity information for only the given node.</description>
+        </parameter>
+        <parameter>
+            <name>vserver</name>
+            <description>If you specify this parameter, then the command displays the key management servers for only the given Vserver.</description>
+        </parameter>
+        <parameter>
+            <name>key-server</name>
+            <description>If you specify this parameter, then the command displays the connectivity information for only the key management servers with the given primary key server host name or IP address listening on the given port.</description>
+        </parameter>
+        <parameter>
+            <name>key-server-status</name>
+            <description>If you specify this parameter, then the command displays the connectivity information for only the key management servers with the given status.</description>
+        </parameter>
+        <parameter>
+            <name>status-details</name>
+            <description>If you specify this parameter, then the command displays the connectivity information for only the key management servers with the given status details.</description>
+        </parameter>
+        <parameter>
+            <name>operational-status</name>
+            <description>If you specify this parameter, then the command displays the connectivity information for only the key management servers with the given operational status.</description>
+        </parameter>
+        <parameter>
+            <name>secondary-key-servers</name>
+            <description>If you specify this parameter, then the command displays the connectivity information of only the primary key management servers that have the given secondary key management servers.</description>
+        </parameter>
+        <parameter>
+            <name>kmip-version</name>
+            <description>If you specify this parameter, then the command displays the connectivity information for only the key management servers with the given KMIP protocol version.</description>
+        </parameter>
+        <parameter>
+            <name>port</name>
+            <description>If you specify this parameter, then the command displays the connectivity information for only the key management servers listening on the given port.</description>
+        </parameter>
+        <parameter>
+            <name>key-servers</name>
+            <description>Use this parameter to show the host name or IP address of the key management server(s).</description>
+        </parameter>
+        <parameter>
+            <name>roles</name>
+            <description>Use this parameter to show the role of the key management server(s).</description>
+        </parameter>
+        <parameter>
+            <name>key-server-status-list</name>
+            <description>Use this parameter to show the status of the key management server(s).</description>
+        </parameter>
+        <parameter>
+            <name>status-details-list</name>
+            <description>Use this parameter to show the status details of the key management server(s).</description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following example lists all configured key management servers for all Vservers:</p>
+        <screen>
+cluster-2::*> security key-manager external show-status
+
+                Node: sti219-vsim-sr044e
+             Vserver: C1_sti219-vsim-sr044e_1711266079
+     Key Server Port: 12014
+ KMIP is operational: true
+
+Key Server           Role           Server Status     Reason
+-------------------  ------------   ---------------   ------
+10.234.2.30          primary        available         -
+10.237.80.83         secondary      available         -
+10.237.80.223        secondary      available         -
+
+                Node: sti219-vsim-sr044f
+             Vserver: C1_sti219-vsim-sr044e_1711266079
+     Key Server Port: 12014
+ KMIP is operational: true
+
+Key Server           Role           Server Status     Reason
+-------------------  ------------   ---------------   ------
+10.234.2.30          primary        available         -
+10.237.80.83         secondary      available         -
+10.237.80.223        secondary      available         -
+2 entries were displayed.
+        </screen>
+    </example>
+</command>

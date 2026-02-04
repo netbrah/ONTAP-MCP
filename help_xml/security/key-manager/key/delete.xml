@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/keymanager/key/keymanager_key_database_delete_key.smf
+    table name: keymanager_key_database_delete_key
+-->
+<command>
+    <name>security key-manager key delete</name>
+    <description>This command removes an authentication key from the configured
+    key management servers on the admin Vserver. The command fails if the
+    given key is currently in use by ONTAP. This command is not supported
+    when external key management is not enabled for the admin Vserver.
+    </description>
+    <parameters>
+        <parameter>
+            <name>key-id</name>
+            <description>Use this parameter to specify the key ID of the key that you
+            want to remove.</description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following example deletes an authentication key:</p>
+        <screen>
+cluster-1::*> security key-manager key delete -key-id 000000000000000002000000000001006268333f870860128fbe17d393e5083b0000000000000000
+        </screen>
+</example>
+</command>
+

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/external/gcp/gcp_kms_ui.smf
+    table name: gcp_kms_ui
+-->
+<command>
+    <name>security key-manager external gcp update-config</name>
+    <description>This command allows the user to update the configuration file used by the
+    Google Cloud Key Management Service (GCKMS) configured for the given Vserver.
+    The configuration is initialized by running the <cmdname>security key-manager external gcp enable</cmdname>
+    command. This command will fail if GCKMS has not been enabled for the Vserver.
+    </description>
+    <parameters>
+        <parameter>
+            <name>vserver</name>
+        <description>Use this parameter to specify the Vserver for which the
+            GCKMS configuration will be updated.</description>
+        </parameter>
+        <parameter>
+            <name>port</name>
+        <description>Use this parameter to specify the port of the deployed GCKMS.</description>
+        </parameter>
+        <parameter>
+            <name>oauth-host</name>
+        <description>Use this parameter to specify the Open-Authorization and Identity
+        Access and Management Host of the deployed GCKMS.
+        </description>
+        </parameter>
+        <parameter>
+            <name>gcp-host</name>
+        <description>Use this parameter to specify the Host Subdomain of the deployed GCKMS.</description>
+        </parameter>
+        <parameter>
+            <name>privileged-account</name>
+            <description>Use this parameter to specify a privileged service account (email
+            address) with both cloudkms.cryptoKeyVersions.useToEncrypt and
+            cloudkms.cryptoKeyVersions.useToDecrypt permissions. If this parameter is
+            specified, any calls made to the GCKMS will first use
+            iam.serviceAccounts.getAccessToken to impersonate the privileged account.
+            </description>
+        </parameter>
+        <parameter>
+            <name>authentication-method</name>
+            <description>Use this parameter to specify the authentication method.</description>
+        </parameter>
+        <parameter>
+            <name>gce-metadata-server</name>
+            <description>Use this parameter to specify the custom Google Cloud Engine Metadata Server address used for authentication.</description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following example updates the GCKMS configuration for the data Vserver
+        v1 with a new port number 2333, a new authentication endpoint
+        "oauth2.googleapis.com", a new privileged account "serviceaccount@myproject.com"
+        and a new service endpoint "cloudkms.googleapis.com".
+        </p>
+        <screen>
+cluster-1::> security key-manager external gcp update-config -vserver v1 -port 2333 -oauth-host oauth2.googleapis.com -privileged-account serviceaccount@myproject.com -gcp-host cloudkms.googleapis.com
+        </screen>
+    </example>
+</command>
+
+

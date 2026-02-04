@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/keymanager/external/keymanager_external_modify.smf
+    table name: keymanager_external_modify
+-->
+<command>
+    <name>security key-manager external modify</name>
+    <description>This command modifies the external key manager configuration associated with
+    the given Vserver. When modifying the external key manager configuration associated with
+    the admin Vserver, you must run the same command specifying the same parameters on the
+    peer cluster. When modifying the external key manager configuration associated with a data
+    Vserver, you can run the <cmdname>security key-manager external modify</cmdname> command
+    on the active cluster only as the configuration modifications are replicated on the
+    peer cluster. This command is not supported when external key management is not enabled
+    for the given Vserver.
+    </description>
+    <parameters>
+        <parameter>
+            <name>vserver</name>
+            <description>Use this parameter to specify the Vserver on which the
+            key manager to be modified is located.</description>
+        </parameter>
+        <parameter>
+            <name>client-cert</name>
+            <description>Use this parameter to modify the name of the client
+            certificate that the key management servers use to ensure the
+            identity of ONTAP. If the keys of the new certificate do not
+            match the keys of the existing certificate, or if the TLS
+            connectivity with key-management servers fails with the new
+            certificate, the operation fails. Running this command in the
+            diagnostic privilege mode ignores failures and allows the
+            command to complete.</description>
+        </parameter>
+        <parameter>
+            <name>server-ca-certs</name>
+            <description>Use this parameter to modify the names of server-ca
+            certificates that ONTAP uses to ensure the identity of
+            the key management servers. Note that the list provided
+            completely replaces the existing list of certificates. If the TLS
+            connectivity with key-management servers fails with the new list
+            of server-ca certificates, the operation fails. Running this
+            command in the diagnostic privilege mode ignores failures and
+            allows the command to complete.</description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following example updates the client certificate used with
+        the key management servers:</p>
+        <screen>
+cluster-1::> security key-manager external modify -vserver cluster-1 -client-cert NewClientCert
+        </screen>
+    </example>
+</command>

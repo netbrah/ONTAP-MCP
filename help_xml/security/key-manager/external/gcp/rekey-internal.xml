@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/external/gcp/gcp_kms_ui.smf
+    table name: gcp_kms_ui
+-->
+<command>
+    <name>security key-manager external gcp rekey-internal</name>
+    <description>This command rekeys the internal Vserver key hierarchy by changing the
+    SVM key encryption key (KEK). Upon successful completion of the command, all keys in the
+    Vserver key hierarchy will be protected by the new top-level KEK.
+    </description>
+    <parameters>
+        <parameter>
+            <name>vserver</name>
+            <description>This parameter specifies the Vserver for which ONTAP should rekey the SVM KEK.
+            </description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following command rekeys the SVM KEK for data Vserver v1.
+        </p>
+        <screen>
+cluster-1::> security key-manager external gcp rekey-internal -vserver v1
+
+        </screen>
+    </example>
+</command>
+

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/keymanager_config.smf
+    table name: keymanager_config
+-->
+<command>
+    <name>security key-manager config modify</name>
+    <description>This command modifies the key management configuration
+    options.</description>
+    <parameters>
+        <parameter>
+            <name>okm-on-usb-enabled</name>
+            <!--
+            <description>This parameter modifies the configuration state of
+            the Onboard Key Manager (OKM) on external USB mass storage
+            device.</description>
+            -->
+            <hide/>
+        </parameter>
+        <parameter>
+            <name>cc-mode-enabled</name>
+            <description>This parameter modifies the configuration state of
+            the Onboard Key Manager (OKM) Common Criteria (CC) mode.  CC mode
+            enforces some of the policies required by the Common Criteria
+            "Collaborative Protection Profile for Full Drive
+            Encryption-Authorization Acquisition" (FDE-AA cPP) and
+            "Collaborative Protection Profile for Full Drive
+            Encryption-Encryption Engine" documents.</description>
+        </parameter>
+        <parameter>
+            <name>are-unencrypted-metadata-volumes-allowed-in-cc-mode</name>
+            <description>If Common Criteria (CC) mode is enabled this parameter
+            allows unencrypted metadata volumes to exist. These metadata volumes
+            are created internally during normal operation. Examples are volumes
+            created during SnapMirror and Vserver migrate operations. The
+            default value is <varname>false</varname>.
+            </description>
+        </parameter>
+        <parameter>
+            <name>health-monitor-polling-interval</name>
+            <description>This parameter modifies the the polling interval
+            of the keyserver health monitor at the cluster level.
+            </description>
+        </parameter>
+        <parameter>
+            <name>cloud-kms-retry-count</name>
+            <description>This parameter modifies the the cloud keymanager
+            connection retry count at the cluster level.
+            </description>
+        </parameter>
+    </parameters>
+    <example>
+    <!--
+        <p>The following command enables OKM-on-USB mode in the cluster:</p>
+        <screen>
+cluster-1::*> security key-manager config modify -okm-on-usb-enabled true
+        </screen>
+    -->
+        <p>The following command enables Common Criteria mode in the cluster:</p>
+        <screen>
+cluster-1::*> security key-manager config modify -cc-mode-enabled true
+        </screen>
+        <p>The following command modifies the keyserver health monitor polling interval to be 30 minutes:</p>
+        <screen>
+cluster-1::*> security key-manager config modify -health-monitor-polling-interval 30
+        </screen>
+        <p>The following command modifies the cloud keymanager connection retry count to 3:</p>
+        <screen>
+cluster-1::*> security key-manager config modify -cloud-kms-retry-count 3
+        </screen>
+    </example>
+</command>

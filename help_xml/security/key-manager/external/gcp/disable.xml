@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/external/gcp/gcp_kms_ui.smf
+    table name: gcp_kms_ui
+-->
+<command>
+    <name>security key-manager external gcp disable</name>
+    <description>This command disables the Google Cloud Key Management Service (GCKMS) associated
+    with the given Vserver. GCKMS cannot be disabled if it is in use by ONTAP.
+    This command will fail if GCKMS has not been enabled for the Vserver.
+    </description>
+    <parameters>
+        <parameter>
+            <name>vserver</name>
+            <description>Use this parameter to specify the Vserver on which the
+            GCKMS is to be disabled.</description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following example disables the GCKMS for Vserver v1.
+        </p>
+        <screen>
+cluster-1::>security key-manager external gcp disable -vserver v1
+
+        </screen>
+    </example>
+</command>

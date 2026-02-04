@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/key/keymanager_key_table.smf
+    table name: keymanager_key_table
+-->
+<command>
+    <name>security key-manager key key-table show</name>
+    <description>
+    This command displays date and time information for all keys.</description>
+    <parameters>
+        <parameter>
+            <name>key-id</name>
+            <description>If this parameter is specified, the command displays
+            the key that has the specified key ID.</description>
+        </parameter>
+        <parameter>
+            <name>key-type</name>
+            <description>If this parameter is specified, the command only displays
+            information about keys with the specified key type.</description>
+        </parameter>
+        <parameter>
+            <name>encryption-algorithm</name>
+            <description>If this parameter is specified, the command only displays
+            information about keys with the specified encryption algorithm.
+            </description>
+        </parameter>
+        <parameter>
+            <name>creation-time</name>
+            <description>If this parameter is specified, the command displays only
+            information about keys with the specified creation time.</description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following example shows all date and time information for all keys:</p>
+        <screen>
+cluster-1::> security key-manager key key-table show
+
+Key ID                                                                            Key Type Encryption   Creation Time
+--------------------------------------------------------------------------------- -------- ------------ --------------------
+000000000000000002000000000001000f3ee496cd5820cfb76dd2ce3fa7661b0000000000000000  NSE-AK   AES-256      1/30/2022 04:21:40
+00000000000000000200000000000100658779529aa57ddfef953f305b16c7b20000000000000000  NSE-AK   AES-256      1/30/2022 04:21:40
+000000000000000002000000000005004100a4355062ea078fdc2fc16b2018d70000000000000000  VEK      XTS-AES-256  1/30/2022 04:23:14
+00000000000000000200000000000a0059f8f7f92612e85664630eed8fb855170000000000000000  SVM-KEK  AES-256      1/30/2022 04:23:14
+4 entries were displayed.
+
+        </screen>
+    </example>
+</command>
+

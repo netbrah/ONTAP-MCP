@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/health/keymanager_hm_policy_ui.smf
+    table name: keymanager_hm_policy_ui
+-->
+<command>
+    <name>security key-manager health policy modify</name>
+    <description>This command modifies the health monitor policy
+    </description>
+    <parameters>
+        <parameter>
+            <name>keystore-type</name>
+            <description>Use this parameter to specify the keystore-type of the health monitor
+            policy to be updated.
+           </description>
+        </parameter>
+        <parameter>
+            <name>enabled</name>
+            <description>Use this parameter to specify if the health monitor is enabled.
+            </description>
+        </parameter>
+        <parameter>
+            <name>manage-volume-offline</name>
+            <description>Use this parameter to specify if the health monitor can automatically
+            offline the volumes if the key manager cannot be reached.
+            </description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following example updates the AWS 'keystore-type' health monitor policy "enabled" and "manage-volume-offline" values.
+        </p>
+        <screen>
+cluster-1::> security key-manager health policy modify -keystore-type AWS -enabled false -manage-volume-offline false
+
+        </screen>
+    </example>
+</command>

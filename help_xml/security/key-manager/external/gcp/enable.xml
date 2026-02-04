@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    smf file: src/tables/external/gcp/gcp_kms_ui.smf
+    table name: gcp_kms_ui
+-->
+<command>
+    <name>security key-manager external gcp enable</name>
+    <description>This command enables the Google Cloud Key Management Service (GCKMS)
+    associated with the given Vserver. A GCP project and GCKMS must be deployed on the
+    GCP portal prior to running this command. GCKMS can only be enabled on a data Vserver
+    that doesn't already have a key manager configured. GCKMS cannot be enabled in a
+    MetroCluster environment.
+    </description>
+    <parameters>
+        <parameter>
+            <name>vserver</name>
+            <description>Use this parameter to specify the Vserver on which the
+            GCKMS is to be enabled.</description>
+        </parameter>
+        <parameter>
+            <name>project-id</name>
+            <description>Use this parameter to specify the project
+            ID of the deployed GCP project.</description>
+        </parameter>
+        <parameter>
+            <name>key-ring-name</name>
+            <description>Use this parameter to specify the key ring name of the
+            deployed GCP project.</description>
+        </parameter>
+        <parameter>
+            <name>key-ring-location</name>
+            <description>Use this parameter to specify the location of the key
+            ring.</description>
+        </parameter>
+        <parameter>
+            <name>key-name</name>
+            <description>Use this parameter to specify the key name of
+            the GCKMS Key Encryption Key (KEK).</description>
+        </parameter>
+        <parameter>
+            <name>oauth-host</name>
+            <description>Use this parameter to specify the host name of
+            the Open Authorization server.</description>
+        </parameter>
+        <parameter>
+            <name>oauth-url</name>
+            <description>Use this parameter to specify the URL of the Open
+            Authorization access token.</description>
+        </parameter>
+        <parameter>
+            <name>privileged-account</name>
+            <description>Use this parameter to specify a privileged service account (email
+            address) with both cloudkms.cryptoKeyVersions.useToEncrypt and
+            cloudkms.cryptoKeyVersions.useToDecrypt permissions. If this parameter is
+            specified, any calls made to the GCKMS will first use
+            iam.serviceAccounts.getAccessToken to impersonate the privileged account.
+            </description>
+        </parameter>
+        <parameter>
+            <name>port</name>
+            <description>Use this parameter to specify the port of the deployed Google Cloud KMS.</description>
+        </parameter>
+        <parameter>
+            <name>cloudkms-host</name>
+            <description>Use this parameter to specify the Google Cloud KMS Host's Subdomain.</description>
+        </parameter>
+        <parameter>
+            <name>verify</name>
+            <description>Use this parameter to specify whether to verify the identity of Google Cloud KMS.</description>
+        </parameter>
+        <parameter>
+            <name>verify-host</name>
+            <description>Use this parameter to specify whether to verify the identity of Google Cloud KMS hostname.</description>
+        </parameter>
+        <parameter>
+            <name>verify-ip</name>
+            <description>Use this parameter to specify whether to verify the identity of Google Cloud KMS ip address.</description>
+        </parameter>
+        <parameter>
+            <name>proxy-type</name>
+            <description>Use this parameter to specify the proxy type.</description>
+        </parameter>
+        <parameter>
+            <name>proxy-host</name>
+            <description>Use this parameter to specify the proxy hostname.</description>
+        </parameter>
+        <parameter>
+            <name>proxy-port</name>
+            <description>Use this parameter to specify the proxy port.</description>
+        </parameter>
+        <parameter>
+            <name>proxy-username</name>
+            <description>Use this parameter to specify the proxy username.</description>
+        </parameter>
+        <parameter>
+            <name>proxy-password</name>
+            <description>Use this parameter to specify the proxy password.</description>
+        </parameter>
+        <parameter>
+            <name>timeout</name>
+            <description>Use this parameter to specify the Google Cloud connection timeout in seconds.</description>
+        </parameter>
+        <parameter>
+            <name>authentication-method</name>
+            <description>Use this parameter to specify the authentication method.</description>
+        </parameter>
+        <parameter>
+            <name>gce-metadata-server</name>
+            <description>Use this parameter to specify the custom Google Cloud Engine Metadata Server address used for authentication.</description>
+        </parameter>
+    </parameters>
+    <example>
+        <p>The following example enables the GCKMS for Vserver v1. The parameters in the
+        example command identify a Google Cloud Platform (GCP) project application deployed
+        on the GCP. The GCP project application has a Project ID "test_project", a key ring
+        name "key_ring_for_test_project", a key ring location "secure_location_for_key_ring",
+        a key name "testKEK" and OAuth server at 10.12.34.1.
+        </p>
+        <screen>
+cluster-1::*> security key-manager external gcp enable -vserver v1 -project-id test_project -key-ring-name key_ring_for_test_project -key-ring-location secure_location_for_key_ring -key-name testKEK -oauth-host 10.12.34.1
+
+Enter the contents of the Google Cloud Key Management Service account key file (json file): Press &lt;Enter&gt; when done
+        </screen>
+    </example>
+</command>
