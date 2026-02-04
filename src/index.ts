@@ -1,279 +1,313 @@
 #!/usr/bin/env node
 
 /**
- * NetApp ONTAP MCP Server - Main Entry Point
+ * NetApp ONTAP Key Manager MCP Server - Simplified FastMCP Implementation
  * 
- * Refactored for clean separation of concerns:
- * - Tool registry eliminates duplication
- * - Transport abstraction supports STDIO/HTTP/JSON-RPC
- * - Configuration management centralized
- * - All business logic moved to appropriate modules
+ * This server provides ONLY key manager operations for NetApp ONTAP clusters.
+ * Uses FastMCP for simple HTTP SSE transport with environment-based configuration.
  */
 
-import { TransportFactory } from "./transports/base-transport.js";
-import { OntapClusterManager, OntapApiClient } from "./ontap-client.js";
-import { z } from "zod";
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { FastMCP } from 'fastmcp';
+import { z } from 'zod';
+import { OntapClusterManager } from './ontap-client.js';
 import {
-  CallToolRequestSchema,
-  InitializeRequestSchema,
-  ListToolsRequestSchema,
-} from "@modelcontextprotocol/sdk/types.js";
+  // Handlers
+  handleClusterListKeyManagers,
+  handleClusterGetKeyManager,
+  handleClusterCreateExternalKeyManager,
+  handleClusterCreateOnboardKeyManager,
+  handleClusterUpdateKeyManagerPassphrase,
+  handleClusterSyncKeyManager,
+  handleClusterDeleteKeyManager,
+  handleClusterListKeyServers,
+  handleClusterAddKeyServer,
+  handleClusterDeleteKeyServer,
+  handleClusterListKeys,
+  handleClusterCreateAuthKey,
+  handleClusterRestoreKeys
+} from './tools/key-manager-tools.js';
 
-// Import snapshot policy tools
-import {
-  createCreateSnapshotPolicyToolDefinition,
-  handleCreateSnapshotPolicy,
-  createListSnapshotPoliciesToolDefinition,
-  handleListSnapshotPolicies,
-  createGetSnapshotPolicyToolDefinition,
-  handleGetSnapshotPolicy,
-  createDeleteSnapshotPolicyToolDefinition,
-  handleDeleteSnapshotPolicy
-} from "./tools/snapshot-policy-tools.js";
-
-// Import export policy tools
-import {
-  createListExportPoliciesToolDefinition,
-  handleListExportPolicies,
-  createGetExportPolicyToolDefinition,
-  handleGetExportPolicy,
-  createCreateExportPolicyToolDefinition,
-  handleCreateExportPolicy,
-  createDeleteExportPolicyToolDefinition,
-  handleDeleteExportPolicy,
-  createAddExportRuleToolDefinition,
-  handleAddExportRule,
-  createUpdateExportRuleToolDefinition,
-  handleUpdateExportRule,
-  createDeleteExportRuleToolDefinition,
-  handleDeleteExportRule
-} from "./tools/export-policy-tools.js";
-
-// Import CIFS share tools
-import {
-  createListCifsSharesToolDefinition,
-  handleListCifsShares,
-  createGetCifsShareToolDefinition,
-  handleGetCifsShare,
-  createCreateCifsShareToolDefinition,
-  handleCreateCifsShare,
-  createUpdateCifsShareToolDefinition,
-  handleUpdateCifsShare,
-  createDeleteCifsShareToolDefinition,
-  handleDeleteCifsShare,
-  createClusterListCifsSharesToolDefinition,
-  handleClusterListCifsShares,
-  createClusterCreateCifsShareToolDefinition,
-  handleClusterCreateCifsShare,
-  createClusterDeleteCifsShareToolDefinition,
-  handleClusterDeleteCifsShare
-} from "./tools/cifs-share-tools.js";
-
-// Import volume tools (all volume-related functionality consolidated)
-import {
-  // Multi-cluster volume tools
-  createClusterListVolumesToolDefinition,
-  handleClusterListVolumes,
-  createClusterCreateVolumeToolDefinition,
-  handleClusterCreateVolume,
-  createClusterDeleteVolumeToolDefinition,
-  handleClusterDeleteVolume,
-  createClusterGetVolumeStatsToolDefinition,
-  handleClusterGetVolumeStats,
-  
-  // Volume configuration and update tools
-  createGetVolumeConfigurationToolDefinition,
-  handleGetVolumeConfiguration,
-  createUpdateVolumeSecurityStyleToolDefinition,
-  handleUpdateVolumeSecurityStyle,
-  createResizeVolumeToolDefinition,
-  handleResizeVolume,
-  createUpdateVolumeCommentToolDefinition,
-  handleUpdateVolumeComment,
-  
-  // Comprehensive volume update tools
-  createUpdateVolumeToolDefinition,
-  handleUpdateVolume,
-  createClusterUpdateVolumeToolDefinition,
-  handleClusterUpdateVolume,
-  
-  // Volume NFS access tools
-  createConfigureVolumeNfsAccessToolDefinition,
-  handleConfigureVolumeNfsAccess,
-  createDisableVolumeNfsAccessToolDefinition,
-  handleDisableVolumeNfsAccess
-} from "./tools/volume-tools.js";
-
-// Import volume update tools - DEPRECATED: moved to volume-tools.ts
-// import {
-//   createGetVolumeConfigurationToolDefinition,
-//   handleGetVolumeConfiguration,
-//   createUpdateVolumeSecurityStyleToolDefinition,
-//   handleUpdateVolumeSecurityStyle,
-//   createResizeVolumeToolDefinition,
-//   handleResizeVolume,
-//   createUpdateVolumeCommentToolDefinition,
-//   handleUpdateVolumeComment
-// } from "./tools/volume-update-tools.js";
-
-// Import snapshot schedule tools
-import {
-  createListSnapshotSchedulesToolDefinition,
-  handleListSnapshotSchedules,
-  createGetSnapshotScheduleToolDefinition,
-  handleGetSnapshotSchedule,
-  createCreateSnapshotScheduleToolDefinition,
-  handleCreateSnapshotSchedule,
-  createUpdateSnapshotScheduleToolDefinition,
-  handleUpdateSnapshotSchedule,
-  createDeleteSnapshotScheduleToolDefinition,
-  handleDeleteSnapshotSchedule
-} from "./tools/snapshot-schedule-tools.js";
-
-// Import QoS policy tools
-import {
-  createClusterListQosPoliciesToolDefinition,
-  handleClusterListQosPolicies,
-  createClusterCreateQosPolicyToolDefinition,
-  handleClusterCreateQosPolicy,
-  createClusterGetQosPolicyToolDefinition,
-  handleClusterGetQosPolicy,
-  createClusterUpdateQosPolicyToolDefinition,
-  handleClusterUpdateQosPolicy,
-  createClusterDeleteQosPolicyToolDefinition,
-  handleClusterDeleteQosPolicy
-} from "./tools/qos-policy-tools.js";
-
-// Import configuration management
-import { parseClusterConfig, loadClusters } from "./config/cluster-config.js";
-
-// Import tool registry system
-import { registerAllTools } from "./registry/register-tools.js";
-import { getAllToolDefinitions, getToolHandler } from "./registry/tool-registry.js";
-
-// Create global cluster manager instance
+// Initialize cluster manager
 const clusterManager = new OntapClusterManager();
 
-// Initialize tool registry
-registerAllTools();
-
-
-const server = new Server(
-  {
-    name: "netapp-ontap-mcp",
-    version: "2.0.0",
-  },
-  {
-    capabilities: {
-      resources: {},
-      tools: {},
-    },
+// Load clusters from environment variable
+const loadClustersFromEnv = () => {
+  const clustersEnv = process.env.ONTAP_CLUSTERS;
+  if (!clustersEnv) {
+    console.warn('⚠️  Warning: ONTAP_CLUSTERS environment variable not set');
+    console.warn('   No clusters will be available until configured via environment');
+    return;
   }
-);
-
-// Handle initialization to load clusters from initializationOptions
-server.setRequestHandler(InitializeRequestSchema, async (request) => {
-  console.error('=== MCP Server Initialization ===');
-  console.error('Initialization options received:', !!request.params?.initializationOptions);
-  console.error('InitializationOptions content:', JSON.stringify(request.params?.initializationOptions, null, 2));
-  
-  // Load clusters from initialization options (if any)
-  if (request.params?.initializationOptions) {
-    loadClusters(clusterManager, request.params.initializationOptions);
-  }
-  
-  // Fallback: Try to load from environment variables if no clusters loaded yet
-  if (clusterManager.listClusters().length === 0) {
-    console.error('No clusters from initializationOptions, trying environment variables...');
-    loadClusters(clusterManager);
-  }
-  
-  return {
-    protocolVersion: "2025-06-18",
-    capabilities: {
-      resources: {},
-      tools: {},
-    },
-    serverInfo: {
-      name: "netapp-ontap-mcp",
-      version: "2.0.0",
-    },
-  };
-});
-
-// List available tools
-server.setRequestHandler(ListToolsRequestSchema, async () => {
-  return {
-    tools: getAllToolDefinitions(),
-  };
-});
-
-// Handle tool calls
-server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
-  const { name, arguments: args } = request.params;
 
   try {
-    // Use registry system to handle tool calls
-    const handler = getToolHandler(name);
-    if (!handler) {
-      throw new Error(`Unknown tool: ${name}`);
+    const clusters = JSON.parse(clustersEnv);
+    if (!Array.isArray(clusters)) {
+      throw new Error('ONTAP_CLUSTERS must be a JSON array');
     }
-    
-    const result = await handler(args, clusterManager);
-    return {
-      content: [{
-        type: "text",
-        text: result,
-      }],
-    };
+
+    clusters.forEach((cluster: any) => {
+      if (!cluster.name || !cluster.cluster_ip || !cluster.username || !cluster.password) {
+        console.error('❌ Invalid cluster config:', cluster);
+        return;
+      }
+      clusterManager.addCluster({
+        name: cluster.name,
+        cluster_ip: cluster.cluster_ip,
+        username: cluster.username,
+        password: cluster.password,
+        description: cluster.description,
+        verify_ssl: cluster.verify_ssl !== false // Default to true
+      });
+      console.log(`✅ Loaded cluster: ${cluster.name} (${cluster.cluster_ip})`);
+    });
   } catch (error) {
-    return {
-      content: [{
-        type: "text",
-        text: `Error: ${error instanceof Error ? error.message : String(error)}`,
-      }],
-      isError: true,
-    };
+    console.error('❌ Error parsing ONTAP_CLUSTERS:', error);
+    throw error;
+  }
+};
+
+// Load clusters on startup
+loadClustersFromEnv();
+
+// Create FastMCP server
+const server = new FastMCP({
+  name: 'ontap-key-manager-mcp',
+  version: '2.0.0'
+});
+
+// ================================
+// Register Key Manager Tools
+// ================================
+
+// 1. List Key Managers
+server.addTool({
+  name: 'cluster_list_key_managers',
+  description: 'List all key managers (onboard and external) configured on a cluster',
+  parameters: z.object({
+    cluster_name: z.string().describe('Name of the registered cluster'),
+    scope: z.enum(['cluster', 'svm']).describe('Filter by scope').optional(),
+    svm_name: z.string().describe('Filter by SVM name').optional()
+  }),
+  execute: async (args) => {
+    const result = await handleClusterListKeyManagers(args, clusterManager);
+    return result.summary;
   }
 });
 
-// Start the server with transport detection
-async function startStdioServer() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("NetApp ONTAP Multi-Cluster MCP Server running on stdio");
-}
-
-async function startHttpServer(port: number = 3000) {
-  // Use Streamable HTTP transport (MCP 2025-06-18 spec)
-  console.error('Starting with Streamable HTTP transport (2025-06-18 spec)...');
-  const { StreamableHttpTransport } = await import('./transports/streamable-http-transport.js');
-  const transport = new StreamableHttpTransport();
-  await transport.start(port);
-}
-
-async function main() {
-  // Detect transport method from command line arguments
-  const args = process.argv.slice(2);
-  const httpArg = args.find(arg => arg.startsWith('--http'));
-  const port = httpArg ? parseInt(httpArg.split('=')[1]) || 3000 : 3000;
-  
-  // Check for both --http flag and positional argument
-  const isHttpMode = args.includes('--http') || httpArg || args[0] === 'http';
-  const httpPort = args[0] === 'http' && args[1] ? parseInt(args[1]) || 3000 : port;
-  
-  if (isHttpMode) {
-    // HTTP mode using Streamable HTTP (MCP 2025-06-18)
-    await startHttpServer(httpPort);
-  } else {
-    // Default: STDIO mode
-    await startStdioServer();
+// 2. Get Key Manager Details
+server.addTool({
+  name: 'cluster_get_key_manager',
+  description: 'Get detailed information about a specific key manager including status and backup data',
+  parameters: z.object({
+    cluster_name: z.string().describe('Name of the registered cluster'),
+    uuid: z.string().uuid().describe('UUID of the key manager')
+  }),
+  execute: async (args) => {
+    const result = await handleClusterGetKeyManager(args, clusterManager);
+    return result.summary;
   }
-}
-
-main().catch((error) => {
-  console.error("Server error:", error);
-  process.exit(1);
 });
+
+// 3. Create External Key Manager
+server.addTool({
+  name: 'cluster_create_external_key_manager',
+  description: 'Configure external key management (KMIP) with certificates and key servers',
+  parameters: z.object({
+    cluster_name: z.string().describe('Name of the registered cluster'),
+    client_certificate_uuid: z.string().uuid().describe('UUID of the client certificate'),
+    server_ca_certificate_uuids: z.array(z.string().uuid())
+      .min(1)
+      .describe('UUIDs of server CA certificates'),
+    key_servers: z.array(z.object({
+      server: z.string().describe('Key server address (host:port)'),
+      timeout: z.number().min(1).max(60).default(25).optional()
+    })).min(1).max(4).describe('Primary key servers (max 4)'),
+    svm_uuid: z.string().uuid().describe('SVM UUID (for SVM-scoped key manager)').optional(),
+    policy: z.string().describe('Security policy name').optional()
+  }),
+  execute: async (args) => {
+    const result = await handleClusterCreateExternalKeyManager(args, clusterManager);
+    return result.summary;
+  }
+});
+
+// 4. Create Onboard Key Manager
+server.addTool({
+  name: 'cluster_create_onboard_key_manager',
+  description: 'Enable the Onboard Key Manager (OKM) with a cluster-wide passphrase',
+  parameters: z.object({
+    cluster_name: z.string().describe('Name of the registered cluster'),
+    passphrase: z.string()
+      .min(32)
+      .max(256)
+      .describe('Cluster-wide passphrase (32-256 characters)'),
+    synchronize: z.boolean()
+      .describe('Synchronize with MetroCluster partner')
+      .optional()
+  }),
+  execute: async (args) => {
+    const result = await handleClusterCreateOnboardKeyManager(args, clusterManager);
+    return result.summary;
+  }
+});
+
+// 5. Update Key Manager Passphrase
+server.addTool({
+  name: 'cluster_update_key_manager_passphrase',
+  description: 'Update the Onboard Key Manager passphrase',
+  parameters: z.object({
+    cluster_name: z.string().describe('Name of the registered cluster'),
+    uuid: z.string().uuid().describe('UUID of the onboard key manager'),
+    existing_passphrase: z.string().describe('Current passphrase'),
+    new_passphrase: z.string().min(32).max(256).describe('New passphrase')
+  }),
+  execute: async (args) => {
+    const result = await handleClusterUpdateKeyManagerPassphrase(args, clusterManager);
+    return result.summary;
+  }
+});
+
+// 6. Sync Key Manager
+server.addTool({
+  name: 'cluster_sync_key_manager',
+  description: 'Synchronize onboard keys across all nodes in the cluster',
+  parameters: z.object({
+    cluster_name: z.string().describe('Name of the registered cluster'),
+    uuid: z.string().uuid().describe('UUID of the onboard key manager'),
+    passphrase: z.string().describe('Current passphrase')
+  }),
+  execute: async (args) => {
+    const result = await handleClusterSyncKeyManager(args, clusterManager);
+    return result.summary;
+  }
+});
+
+// 7. Delete Key Manager
+server.addTool({
+  name: 'cluster_delete_key_manager',
+  description: 'Delete a key manager configuration. WARNING: Ensure no volumes are using encryption keys from this manager.',
+  parameters: z.object({
+    cluster_name: z.string().describe('Name of the registered cluster'),
+    uuid: z.string().uuid().describe('UUID of the key manager to delete')
+  }),
+  execute: async (args) => {
+    const result = await handleClusterDeleteKeyManager(args, clusterManager);
+    return result.summary;
+  }
+});
+
+// 8. List Key Servers
+server.addTool({
+  name: 'cluster_list_key_servers',
+  description: 'List all key servers configured for an external key manager',
+  parameters: z.object({
+    cluster_name: z.string().describe('Name of the registered cluster'),
+    key_manager_uuid: z.string().uuid().describe('UUID of the key manager')
+  }),
+  execute: async (args) => {
+    const result = await handleClusterListKeyServers(args, clusterManager);
+    return result.summary;
+  }
+});
+
+// 9. Add Key Server
+server.addTool({
+  name: 'cluster_add_key_server',
+  description: 'Add a primary key server to an external key manager',
+  parameters: z.object({
+    cluster_name: z.string().describe('Name of the registered cluster'),
+    key_manager_uuid: z.string().uuid().describe('UUID of the external key manager'),
+    server: z.string().describe('Key server address (host:port)'),
+    timeout: z.number().min(1).max(60).default(25).optional(),
+    username: z.string().optional(),
+    password: z.string().optional()
+  }),
+  execute: async (args) => {
+    const result = await handleClusterAddKeyServer(args, clusterManager);
+    return result.summary;
+  }
+});
+
+// 10. Delete Key Server
+server.addTool({
+  name: 'cluster_delete_key_server',
+  description: 'Remove a key server from an external key manager',
+  parameters: z.object({
+    cluster_name: z.string().describe('Name of the registered cluster'),
+    key_manager_uuid: z.string().uuid().describe('UUID of the key manager'),
+    server: z.string().describe('Key server address to remove')
+  }),
+  execute: async (args) => {
+    const result = await handleClusterDeleteKeyServer(args, clusterManager);
+    return result.summary;
+  }
+});
+
+// 11. List Keys
+server.addTool({
+  name: 'cluster_list_keys',
+  description: 'List encryption keys stored in a key manager',
+  parameters: z.object({
+    cluster_name: z.string().describe('Name of the registered cluster'),
+    key_manager_uuid: z.string().uuid().describe('UUID of the key manager'),
+    key_type: z.enum(['nse_ak', 'aek', 'vek', 'nek', 'svm_kek', 'mroot_ak']).optional(),
+    restored: z.boolean().optional()
+  }),
+  execute: async (args) => {
+    const result = await handleClusterListKeys(args, clusterManager);
+    return result.summary;
+  }
+});
+
+// 12. Create Auth Key
+server.addTool({
+  name: 'cluster_create_auth_key',
+  description: 'Create a new authentication key for NSE drives',
+  parameters: z.object({
+    cluster_name: z.string().describe('Name of the registered cluster'),
+    key_manager_uuid: z.string().uuid().describe('UUID of the key manager'),
+    key_tag: z.string().max(32).optional(),
+    passphrase: z.string().min(20).max(32).optional()
+  }),
+  execute: async (args) => {
+    const result = await handleClusterCreateAuthKey(args, clusterManager);
+    return result.summary;
+  }
+});
+
+// 13. Restore Keys
+server.addTool({
+  name: 'cluster_restore_keys',
+  description: 'Restore missing encryption keys from the key manager to nodes',
+  parameters: z.object({
+    cluster_name: z.string().describe('Name of the registered cluster'),
+    key_manager_uuid: z.string().uuid().describe('UUID of the key manager')
+  }),
+  execute: async (args) => {
+    const result = await handleClusterRestoreKeys(args, clusterManager);
+    return result.summary;
+  }
+});
+
+// ================================
+// Start Server
+// ================================
+
+const port = parseInt(process.env.PORT || '3000', 10);
+
+console.log('🚀 Starting NetApp ONTAP Key Manager MCP Server...');
+console.log(`   Server Name: ontap-key-manager-mcp`);
+console.log(`   Version: 2.0.0`);
+console.log(`   Transport: HTTP SSE`);
+console.log(`   Port: ${port}`);
+console.log(`   Clusters loaded: ${clusterManager.listClusters().length}`);
+
+server.start({
+  transportType: 'httpStream',
+  httpStream: {
+    port: port
+  }
+});
+
+console.log(`✅ Server running on http://localhost:${port}`);
+console.log(`   SSE endpoint: http://localhost:${port}/sse`);

@@ -463,7 +463,7 @@ export async function handleClusterCreateExternalKeyManager(
     svmUuid: validated.svm_uuid,
     clientCertificateUuid: validated.client_certificate_uuid,
     serverCaCertificateUuids: validated.server_ca_certificate_uuids,
-    servers: validated.key_servers,
+    keyServers: validated.key_servers,
     policy: validated.policy
   });
 

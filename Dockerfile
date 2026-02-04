@@ -1,6 +1,6 @@
-# NetApp ONTAP MCP Server - Docker Image
+# NetApp ONTAP Key Manager MCP Server - Docker Image
+# Simplified FastMCP implementation for key manager commands only
 # Multi-stage build for minimal production image size
-# Optimized for HTTP transport mode only
 
 ARG NODE_VERSION=20-alpine
 
@@ -29,12 +29,13 @@ RUN npm run build
 FROM node:${NODE_VERSION}
 
 # Metadata labels
-LABEL maintainer="NetApp ONTAP MCP"
-LABEL description="NetApp ONTAP MCP Server - Model Context Protocol for ONTAP REST API"
-LABEL version="1.0.0"
+LABEL maintainer="NetApp ONTAP Key Manager MCP"
+LABEL description="NetApp ONTAP Key Manager MCP Server - FastMCP for Key Management"
+LABEL version="2.0.0"
 
-# Install wget for health checks (alpine uses wget, not curl)
-RUN apk add --no-cache wget
+# Install curl for health checks (if needed, alpine node image may already have it)
+# Commenting out to avoid network dependency issues during build
+# RUN apk add --no-cache curl || echo "curl may already be installed"
 
 WORKDIR /opt/ontap-mcp
 
@@ -51,12 +52,13 @@ ENV PORT=3000
 EXPOSE ${PORT}
 
 # Health check for container orchestration (Docker, Kubernetes, etc.)
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/health || exit 1
+# Disabled by default due to tool dependency - can be enabled in docker-compose.yml
+# HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+#   CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/health || exit 1
 
 # Run as non-root user for security
 USER node
 
-# Start MCP server in HTTP mode
+# Start MCP server with FastMCP SSE transport
 # Uses PORT env var for flexibility (default: 3000)
-ENTRYPOINT ["sh", "-c", "node build/index.js --http=${PORT}"]
+ENTRYPOINT ["node", "build/index.js"]
