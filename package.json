@@ -1,37 +1,35 @@
 {
-  "name": "ontap-mcp",
-  "version": "1.0.0",
-  "description": "NetApp ONTAP MCP Server - A Model Context Protocol server for NetApp ONTAP REST API integration",
-  "main": "build/index.js",
+  "name": "ontap-keymanager-mcp",
+  "version": "2.0.0",
+  "description": "NetApp ONTAP Key Manager MCP Server - FastMCP-based HTTP SSE server for key management operations",
+  "main": "build/server.js",
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "node build/index.js",
-    "start:http": "node build/index.js --http",
-    "start:http:port": "node build/index.js --http=3001",
-    "dev": "tsc && node build/index.js",
-    "dev:http": "tsc && node build/index.js --http",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node build/server.js",
+    "dev": "tsc && node build/server.js",
+    "docker:build": "docker build -t ontap-keymanager-mcp .",
+    "docker:run": "docker-compose up -d",
+    "docker:stop": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
   },
   "keywords": [
     "mcp",
     "netapp",
     "ontap",
-    "storage",
-    "api"
+    "keymanager",
+    "fastmcp",
+    "sse",
+    "security"
   ],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.3",
     "@types/node": "^24.1.0",
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.19.1",
-    "cors": "^2.8.5",
-    "express": "^5.1.0",
+    "fastmcp": "^3.31.0",
     "zod": "^3.25.76"
   }
 }

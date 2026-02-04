@@ -81,3 +81,5 @@ demo/mcp.json
 
 # Reference files - not part of codebase
 
+README.old.md
+test-server.sh
