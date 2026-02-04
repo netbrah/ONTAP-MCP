@@ -1,6 +1,6 @@
-# NetApp ONTAP MCP Server - Docker Image
+# NetApp ONTAP Key Manager MCP Server - Docker Image
 # Multi-stage build for minimal production image size
-# Optimized for HTTP transport mode only
+# FastMCP-based HTTP SSE server
 
 ARG NODE_VERSION=20-alpine
 
@@ -17,8 +17,8 @@ COPY package*.json tsconfig.json ./
 # Install ALL dependencies (including devDependencies for TypeScript compilation)
 RUN npm ci --production=false
 
-# Copy source code
-COPY src/ ./src/
+# Copy source code (only server.ts needed)
+COPY src/server.ts ./src/
 
 # Compile TypeScript to JavaScript
 RUN npm run build
@@ -29,9 +29,9 @@ RUN npm run build
 FROM node:${NODE_VERSION}
 
 # Metadata labels
-LABEL maintainer="NetApp ONTAP MCP"
-LABEL description="NetApp ONTAP MCP Server - Model Context Protocol for ONTAP REST API"
-LABEL version="1.0.0"
+LABEL maintainer="NetApp ONTAP Key Manager MCP"
+LABEL description="FastMCP-based HTTP SSE server for NetApp ONTAP Key Manager REST API"
+LABEL version="2.0.0"
 
 # Install wget for health checks (alpine uses wget, not curl)
 RUN apk add --no-cache wget
@@ -57,6 +57,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 # Run as non-root user for security
 USER node
 
-# Start MCP server in HTTP mode
-# Uses PORT env var for flexibility (default: 3000)
-ENTRYPOINT ["sh", "-c", "node build/index.js --http=${PORT}"]
+# Start FastMCP server
+ENTRYPOINT ["node", "build/server.js"]
