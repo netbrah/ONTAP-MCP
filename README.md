@@ -64,10 +64,11 @@ Configure the server using environment variables:
 
 ## 📡 API Endpoints
 
-- **SSE Endpoint:** `http://localhost:3000/sse`
+- **MCP Endpoint:** `http://localhost:3000/mcp` (HTTP streaming)
+- **SSE Endpoint:** `http://localhost:3000/sse` (Server-Sent Events)
 - **Health Check:** `http://localhost:3000/health`
 
-The server uses FastMCP's HTTP SSE transport for MCP communication.
+The server uses FastMCP's HTTP Stream transport with SSE compatibility.
 
 ## 🔐 Available Key Manager Tools (13)
 
@@ -94,6 +95,22 @@ The server uses FastMCP's HTTP SSE transport for MCP communication.
 13. **`restore_keys`** - Restore missing keys from key manager
 
 ## 📋 Usage Examples
+
+### Using with MCP Clients
+
+The server implements the Model Context Protocol and can be used with any MCP-compatible client. Here's a quick test using curl:
+
+```bash
+# Test health endpoint
+curl http://localhost:3000/health
+
+# Test SSE endpoint (will stream events)
+curl http://localhost:3000/sse
+```
+
+For programmatic access, use an MCP client library or FastMCP client.
+
+### Tool Call Examples
 
 ### List Key Managers
 
