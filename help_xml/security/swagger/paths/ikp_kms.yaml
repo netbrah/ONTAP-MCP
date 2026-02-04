@@ -1,0 +1,571 @@
+/security/ikp-kms:
+  x-ntap-visibility:
+    type: private
+  x-ntap-long-description:
+    tags: [ security ]
+    description: |
+      ## Overview
+      IBM Key Protect Key Management Service (IKPKMS) is a cloud key management service that provides a secure
+      store for secrets. This feature allows ONTAP to securely store its encryption
+      keys using IKPKMS. In order to use IKPKMS with ONTAP, you must first create an IKPKMS instance
+      with a root key and provide the IKPKMS instance ID, root key name, and an API key for a
+      service ID with appropriate permissions for the newly created IKPKMS instance.
+
+      ## Examples TODO
+      ### Enabling IKP KMS for an SVM
+
+      The following example shows how to enable IKP KMS at the SVM-scope. Note the <i>return_records=true</i> query parameter is used to obtain the newly created key manager configuration.
+      ```
+      # The API:
+      POST /api/security/ikp-kms
+      # The call:
+      curl -X POST 'https://<mgmt-ip>/api/security/ikp-kms?return_records=true' -H 'accept: application/hal+json' -d '{"region": "test_region", "instance_id": "test_instance_id", "key_id": "12345678-1234-1234-1234-123456789101", "api_key": "test_api_key", "svm": {"name": "vs0"}}'
+      # The response:
+      {
+        "num_records": 1,
+        "records": [
+          {
+            "uuid": "347f8eda-e6b2-11ec-9217-005056a76d00",
+            "svm": {
+              "name": "vs0"
+            },
+            "region": "test_region",
+            "instance_id": "test_instance_id",
+            "key_id": "12345678-1234-1234-1234-123456789101",
+            "_links": {
+              "self": {
+                "href": "/api/security/ikp-kms/347f8eda-e6b2-11ec-9217-005056a76d00"
+              }
+            }
+          }
+        ]
+      }
+      ```
+      ---
+      ### Retrieving all IKP KMS configurations
+      The following example shows how to retrieve the non-advanced properties for all IKP KMS configurations.
+      ```
+      # The API:
+      GET /api/security/ikp-kms
+      # The call:
+      curl -X GET 'https://<mgmt-ip>/api/security/ikp-kms?fields=*'
+      # The response:
+      {
+        "records": [
+          {
+            "uuid": "347f8eda-e6b2-11ec-9217-005056a76d00",
+            "km_name": "",
+            "scope": "svm",
+            "svm": {
+              "uuid": "6549ce9d-e1c1-11ec-a532-005056a76d00",
+              "name": "vs0"
+            },
+            "region": "test_region",
+            "instance_id": "test_instance_id",
+            "key_id": "12345678-1234-1234-1234-123456789101",
+            "polling_period": 60,
+            "timeout": 10,
+            "_links": {
+              "self": {
+                "href": "/api/security/ikp-kms/347f8eda-e6b2-11ec-9217-005056a76d00"
+              }
+            }
+          }
+        ],
+        "num_records": 1,
+        "_links": {
+          "self": {
+            "href": "/api/security/ikp-kms?fields=*&return_records=true"
+          }
+        }
+      }
+      ```
+      ---
+      ### Retrieving a specific IKP KMS configuration
+      The following example shows how to retrieve non-advances properties for a specific IKP KMS configuration.
+      ```
+      # The API:
+      GET /api/security/ikp-kms/{uuid}
+      # The call:
+      curl -X GET 'https://<mgmt-ip>/api/security/ikp-kms/347f8eda-e6b2-11ec-9217-005056a76d00?fields=*'
+      # The response:
+      {
+        "uuid": "347f8eda-e6b2-11ec-9217-005056a76d00",
+        "km_name": "",
+        "scope": "svm",
+        "svm": {
+          "uuid": "6549ce9d-e1c1-11ec-a532-005056a76d00",
+          "name": "vs0"
+        },
+        "region": "test_region",
+        "instance_id": "test_instance_id",
+        "key_id": "12345678-1234-1234-1234-123456789101",
+        "polling_period": 60,
+        "timeout": 10,
+        "_links": {
+          "self": {
+            "href": "/api/security/ikp-kms/347f8eda-e6b2-11ec-9217-005056a76d00"
+          }
+        }
+      }
+      ```
+      ---
+      ### Retrieving the advanced properties of an IKP configured for a specific SVM
+      These values are not retrieved by default with the 'fields=*' option.
+      The following example retrieves the advanced properties of a configured IKP for a specific SVM; there is an added computational cost in retrieving their values. The properties are not populated for either a collection GET or an instance GET unless they are explicitly requested using the `fields` query parameter or GET for all advanced properties is enabled.
+      ```
+      # The API:
+      GET /api/security/ikp-kms
+
+      # The call:
+      curl -X GET 'https://<mgmt-ip>/api/security/ikp-kms/347f8eda-e6b2-11ec-9217-005056a76d00/?fields=state,amazon_reachability,ekmip_reachability'
+
+      # The response:
+      {
+        "uuid": "347f8eda-e6b2-11ec-9217-005056a76d00",
+        "state": {
+          "cluster_state": true,
+          "message": "",
+          "code": "0"
+        },
+        "ikp_reachability": {
+          "reachable": true,
+          "message": "",
+          "code": "0"
+        },
+        "ekmip_reachability": [
+          {
+            "reachable": true,
+            "message": "",
+            "code": "0",
+            "node": {
+              "uuid": "817f544f-a98d-11ec-ae20-005056ac7c32",
+              "name": "node1",
+              "_links": {
+                "self": {
+                  "href": "/api/cluster/nodes/817f544f-a98d-11ec-ae20-005056ac7c32"
+                }
+              }
+            }
+          }
+        ],
+        "_links": {
+          "self": {
+            "href": "/api/security/ikp-kms/347f8eda-e6b2-11ec-9217-005056a76d00"
+          }
+        }
+      }
+      ```
+      ---
+      ### Updating the API key of a specific IKPKMS configuration
+      The following example shows how to update the application credentials for a specific IKPKMS configuration:
+      ```
+      # The API:
+      PATCH /api/security/ikp-kms/{uuid}
+      # The call:
+      curl -X PATCH 'https://<mgmt-ip>/api/security/ikp-kms/33820b57-ec90-11ea-875e-005056bbf3f0' -d '{"api_key": "myNewApiKey"}'
+      ```
+      ---
+      ### Deleting a specific IKPKMS configuration
+      The following example shows how to delete a specific IKPKMS configuration:
+      ```
+      # The API:
+      DELETE /api/security/ikp-kms/{uuid}
+      # The call:
+      curl -X DELETE 'https://<mgmt-ip>/api/security/ikp-kms/33820b57-ec90-11ea-875e-005056bbf3f0'
+      ```
+      ---
+      ### Restoring keys from a KMIP server
+      The following example shows how to restore keys for an IKPKMS configuration:
+      ```
+      # The API:
+      POST /api/security/ikp-kms/{uuid}/restore
+      # The call:
+      curl -X POST 'https://<mgmt-ip>/api/security/ikp-kms/33820b57-ec90-11ea-875e-005056bbf3f0/restore'
+      ```
+      ---
+  post:
+    tags: [ security ]
+    description: |
+      Configures the IBM Key Protect Key Management Service configuration for the specified SVM.
+
+      ### Required properties
+      * `svm.uuid` or `svm.name` - Existing SVM for which to create an IBM Key Protect Key Management Service instance.
+      * `region` - Region of IBM Key Protect Key Management Service instance.
+      * `instance_id` - IBM Key Protect Key Management Service instance ID.
+      * `api_key` - IBM Key Protect Key Management Service API key.
+      * `key_id` - IBM Key Protect Key Management Service Key ID.
+
+      ### Optional properties
+      * `proxy_type` - Type of proxy (http/https) if proxy configuration is used.
+      * `proxy_host` - Proxy hostname if proxy configuration is used.
+      * `proxy_port` - Proxy port number if proxy configuration is used.
+      * `proxy_username` - Proxy username if proxy configuration is used.
+      * `proxy_password` - Proxy password if proxy configuration is used.
+
+      ### Related ONTAP commands
+      * `security key-manager external ikp enable`
+    operationId: ikp_kms_create
+    parameters:
+      - name: info
+        in: body
+        description: Info specification
+        schema:
+          $ref: "#/definitions/ikp_kms"
+    responses:
+      201:
+        description: Created
+        schema:
+          $ref: "#/definitions/ikp_kms_response"
+      202:
+        description: Accepted
+        schema:
+          $ref: "#/definitions/job_link_response"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et
+          - name: KEYMANAGER_MESSAGE_IKPKMS_KEY_ID_NOT_UUID
+            message: Key-id provided was not a UUID.
+          - name: KEYMANAGER_MESSAGE_IKPKMS_FEATURE_NOT_AVAILABLE
+            message: Not all nodes are running a version that supports IKPKMS.
+          - name: KEYMANAGER_MESSAGE_IKPKMS_CAP_NOT_SET
+            message: The IBM Key Protect Key Management Service capability is not enabled.
+          - name: KEYMANAGER_MESSAGE_IKPKMS_UNSUPPORTED_ON_CSERVER_REST
+            message: The IBM Key Protect Key Management Service is not supported on the Admin SVM.
+          - name: KEYMANAGER_MESSAGE_IKPKMS_KM_ALREADY_CONFIGURED_REST
+            message: An IBM Key Protect Key Management Service instance already exists on the SVM.
+          - name: KEYMANAGER_MESSAGE_IKPKMS_MCC_UNSUPPORTED
+            message: MCC is enabled, and is not compatible with the IBM Key Protect Key Management Service.
+          - name: KEYMANAGER_MESSAGE_ERR_NODE_OOQ
+            message: Not all nodes are in quorum.
+          - name: KEYMANAGER_MESSAGE_ERR_CANNOT_DETERMINE_NODE_COUNT
+            message: Internal error. Cannot determine node count.
+          - name: KEYMANAGER_MESSAGE_IKPKMS_NO_SECRET_API_KEY
+            message: The secret API key was not provided.
+          - name: KEYMANAGER_MESSAGE_CLUSTER_LIF_MISSING
+            message: A LIF with Cluster role was not found.
+          - name: KEYMANAGER_MESSAGE_IKPKMS_FAILED_TO_RETRIEVE_SECRET_API_KEY
+            message: Internal error. The secret API key was not able to be retrieved.
+          - name: KEYMANAGER_MESSAGE_KMIP_NAE_VOLUMES_FOUND_REST
+            message: The key manager cannot be configured because the SVM has NAE volumes.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+  get:
+    tags: [ security ]
+    description: |
+      Retrieves all IBM Key Protect Key Management Service instances configured for all clusters and SVMs.
+
+      ### Related ONTAP commands
+      * `security key-manager external ikp show`
+      * `security key-manager external ikp check`
+    operationId: ikp_kms_collection_get
+    parameters:
+      - x-ntap-autogen-params: ikp_kms
+      - $ref: "#/parameters/fields_param"
+      - $ref: "#/parameters/max_records_param"
+      - $ref: "#/parameters/return_timeout_get_param"
+      - $ref: "#/parameters/return_records_get_param"
+      - $ref: "#/parameters/order_by_param"
+    responses:
+      200:
+        description: OK
+        schema:
+          $ref: "#/definitions/ikp_kms_response"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et
+          - name: KEYMANAGER_MESSAGE_IKPKMS_REACHABILITY_FAILED_ON_NODES
+            message: The IBM Key Protect Key Management Service unreachable from the SVM.
+          - name: KEYMANAGER_MESSAGE_EKMIP_SERVER_STATUS_UNAVAILABLE_ON_NODE
+            message: Embedded KMIP server status not available.
+          - name: KEYMANAGER_MESSAGE_UNAVAILABLE_PDEK_ON_NODES
+            message: Top-level internal key protection key (KEK) unavailable on node.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+/security/ikp-kms/{uuid}:
+  x-ntap-visibility:
+    type: private
+  get:
+    tags: [ security ]
+    description: |
+      Retrieves the IBM Key Protect Key Management Service configuration for the SVM specified by the UUID.
+
+      ### Related ONTAP commands
+      * `security key-manager external ikp show`
+      * `security key-manager external ikp check`
+    operationId: ikp_kms_get
+    parameters:
+      - name: uuid
+        in: path
+        type: string
+        description: IBM Key Protect Key Management Service UUID
+        required: true
+      - $ref: "#/parameters/fields_param"
+    responses:
+      200:
+        description: OK
+        schema:
+          $ref: "#/definitions/ikp_kms"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et
+          - name: KEYMANAGER_MESSAGE_IKPKMS_REACHABILITY_FAILED_ON_NODES
+            message: The IBM Key Protect Key Management Service unreachable from the SVM.
+          - name: KEYMANAGER_MESSAGE_EKMIP_SERVER_STATUS_UNAVAILABLE_ON_NODE
+            message: Embedded KMIP server status not available.
+          - name: KEYMANAGER_MESSAGE_UNAVAILABLE_PDEK_ON_NODES
+            message: Top-level internal key protection key (KEK) unavailable on node.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+  patch:
+    tags: [ security ]
+    description: |
+      Updates the IBM Key Protect Key Management Service configuration.
+
+      ### Optional properties
+      * `api_key` - API key of the IKP KMS configuration
+      * `proxy_type`` - Type of proxy (http/https) if proxy configuration is used.
+      * `proxy_host` - Proxy hostname if proxy configuration is used.
+      * `proxy_port` - Proxy port number if proxy configuration is used.
+      * `proxy_username` - Proxy username if proxy configuration is used.
+      * `proxy_password` - Proxy password if proxy configuration is used.
+
+      ### Related ONTAP commands
+      * `security key-manager external ikp update-config`
+      * `security key-manager external ikp update-credentials`
+    operationId: ikp_kms_modify
+    parameters:
+      - name: uuid
+        in: path
+        type: string
+        description: IBM Key Protect Key Management Service UUID
+        required: true
+      - name: info
+        in: body
+        description: IBM Key Protect Key Management Service information
+        schema:
+          $ref: "#/definitions/ikp_kms"
+    responses:
+      200:
+        description: OK
+      202:
+        description: Accepted
+        schema:
+          $ref: "#/definitions/job_link_response"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et
+          - name: KEYMANAGER_MESSAGE_IKPKMS_NOT_CONFIGURED
+            message: The IBM Key Protect Key Management Service is not configured for the SVM.
+          - name: KEYMANAGER_MESSAGE_IKPKMS_NO_SECRET_API_KEY
+            message: The secret API key was not provided.
+          - name: KEYMANAGER_MESSAGE_IKPKMS_UNREACHABLE_UPDATE_CRED
+            message: Unable to connect to the IBM Key Protect Key Management Service with updated credentials.
+          - name: KEYMANAGER_MESSAGE_NO_MODIFY_INPUTS_REST
+            message: No inputs were provided for the patch request.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+  delete:
+    tags: [ security ]
+    description: |
+      Deletes the IBM Key Protect Key Management Service configuration.
+
+      ### Related ONTAP commands
+      * `security key-manager external ikp disable`
+    operationId: ikp_kms_delete
+    parameters:
+      - name: uuid
+        in: path
+        description: IBM Key Protect Key Management Service UUID
+        required: true
+        type: string
+    responses:
+      200:
+        description: OK
+      202:
+        description: Accepted
+        schema:
+          $ref: "#/definitions/job_link_response"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et
+          - name: KEYMANAGER_MESSAGE_IKPKMS_NOT_CONFIGURED
+            message: The IBM Key Protect Key Management Service is not configured for the SVM.
+          - name: KEYMANAGER_MESSAGE_CKM_FOUND_SVM_KEK_IN_MIXED_STATE
+            message: Internal error. The keymanager configured is in a mixed state and has an SVM key.
+          - name: KEYMANAGER_MESSAGE_FINDING_ENCRYPTED_VOLUMES_FAILED
+            message: Internal error. Failed to determine if the given SVM has any encrypted volumes.
+          - name: KEYMANAGER_MESSAGE_VDEKS_ON_KEYMANAGER_REST
+            message: Volume encryption keys (VEK) for one or more encrypted volumes are stored on the key manager configured for the given SVM.
+          - name: KEYMANAGER_MESSAGE_ERR_VOL_KEY_ID_INVALID
+            message: Internal error. Volume encryption key is invalid for a volume.
+          - name: KEYMANAGER_MESSAGE_ERR_VOL_KEY_ID_MISSING
+            message: Internal error. Volume encryption key is missing for a volume.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+/security/ikp-kms/{ikp_kms.uuid}/restore:
+  x-ntap-visibility:
+    type: private
+  post:
+    tags: [ security ]
+    description: |
+      Restores the keys for an SVM from a configured IBM Key Protect Key Management Service.
+
+      ### Related ONTAP commands
+      * `security key-manager external ikp restore`
+
+    operationId: ikp_kms_restore
+    parameters:
+      - name: ikp_kms.uuid
+        in: path
+        type: string
+        description: UUID of the existing IBM Key Protect Key Management Service configuration.
+        required: true
+    responses:
+      202:
+        description: Accepted
+        schema:
+          $ref: "#/definitions/job_link_response"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et
+          - name: KEYMANAGER_MESSAGE_IKPKMS_NOT_CONFIGURED
+            message: The IBM Key Protect Key Management Service is not configured for the given SVM.
+          - name: KEYMANAGER_MESSAGE_RESTORE_FAILED_WITH_REASON
+            message: Unable to restore all keys.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+/security/ikp-kms/{ikp_kms.uuid}/rekey-external:
+  x-ntap-visibility:
+    type: private
+  post:
+    tags: [ security ]
+    description: |
+      Rekeys or re-versions the IBM Key Protect Key Management Service key encryption key (KEK) for the given SVM.
+
+      ### Related ONTAP commands
+      * `security key-manager external ikp rekey-external`
+
+    operationId: ikp_kms_rekey_external
+    parameters:
+      - name: ikp_kms.uuid
+        in: path
+        type: string
+        description: UUID of the existing IBM Key Protect Key Management Service configuration.
+        required: true
+      - name: info
+        in: body
+        description: IKP KMS information
+        required: true
+        schema:
+          $ref: "#/definitions/ikp_kms_key"
+    responses:
+      202:
+        description: Accepted
+        schema:
+          $ref: "#/definitions/job_link_response"
+        x-ntap-go-skip-action: true
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et
+          - name: KEYMANAGER_MESSAGE_IKPKMS_NOT_CONFIGURED
+            message: The IBM Key Protect Key Management Service is not configured for the given SVM.
+          - name: KEYMANAGER_MESSAGE_REKEY_AFTER_MIGRATION_REST
+            message: One or more volume encryption keys for encrypted volumes of this data SVM are stored in the key manager configured for the admin SVM. Use the REST API POST method to migrate this data SVM's keys from the admin SVM's key manager before running the rekey operation.
+          - name: KEYMANAGER_MESSAGE_IKPKMS_REKEY_EXTERNAL_FAILED_ON_NODES_REST
+            message: External rekey failed on one or more nodes.
+          - name: KEYMANAGER_MESSAGE_REKEY_AFTER_BLOCKED
+            message: The IBM Key Protect Key Management Service is in a blocked state.
+          - name: KEYMANAGER_MESSAGE_REKEY_WITHOUT_ENC_VOLUMES_REST
+            message: There are no existing internal keys for the SVM. A rekey operation is allowed for an SVM with one or more encryption keys.
+          - name: KEYMANAGER_MESSAGE_ALL_NODES_NOT_ONLINE_REST
+            message: Internal error. Not all nodes in the cluster are currently online.
+          - name: KEYMANAGER_MESSAGE_VSERVER_KEYSTORE_CONFIG_SWITCH_IN_PROGRESS_REKEY_REST
+            message: Rekey cannot be performed on the SVM while the enabled keystore configuration is being switched. If a previous attempt to switch the keystore configuration failed, or was interrupted, the system will continue to prevent rekeying for the SVM. Use the REST API PATCH method "/api/security/key-stores/{uuid}" to re-run and complete the operation.
+          - name: KEYMANAGER_MESSAGE_VSERVER_KEYSTORE_CONFIG_INITIALIZING_IN_PROGRESS_REKEY
+            message: Rekey cannot be performed on the SVM while the enabled keystore configuration is being initialized. Wait until the keystore is in the active state, and rerun the rekey operation.
+          - name: KEYMANAGER_MESSAGE_VSERVER_KEYSTORE_CONFIG_DISABLING_IN_PROGRESS_REKEY
+            message: Rekey cannot be performed on the SVM while the enabled keystore configuration is being disabled.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+/security/ikp-kms/{ikp_kms.uuid}/rekey-internal:
+  x-ntap-visibility:
+    type: private
+  post:
+    tags: [ security ]
+    description: |
+      Rekeys the SVM KEK for the given SVM.
+
+      ### Related ONTAP commands
+      * `security key-manager external ikp rekey-internal`
+
+    operationId: ikp_kms_rekey_internal
+    parameters:
+      - name: ikp_kms.uuid
+        in: path
+        type: string
+        description: UUID of the existing IBM Key Protect Key Management Service configuration.
+        required: true
+
+    responses:
+      202:
+        description: Accepted
+        schema:
+          $ref: "#/definitions/job_link_response"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et,volume_encryption.et
+          - name: KEYMANAGER_MESSAGE_IKPKMS_NOT_CONFIGURED
+            message: The IBM Key Protect Key Management Service is not configured for the SVM.
+          - name: KEYMANAGER_MESSAGE_REKEY_AFTER_BLOCKED
+            message: The IBM Key Protect Key Management Service is in a blocked state.
+          - name: KEYMANAGER_MESSAGE_REKEY_AFTER_MIGRATION_REST
+            message: One or more volume encryption keys for encrypted volumes of this data SVM are stored in the key manager configured for the admin SVM.
+          - name: KEYMANAGER_MESSAGE_REKEY_WITHOUT_ENC_VOLUMES_REST
+            message: There are no existing internal keys for the SVM. A rekey operation is allowed for an SVM with one or more encryption keys.
+          - name: KEYMANAGER_MESSAGE_ALL_NODES_NOT_ONLINE_REST
+            message: Internal error. Not all nodes in the cluster are currently online.
+          - name: KEYMANAGER_MESSAGE_ERR_KEYGEN_SVM_CRYPTO_FAILED
+            message: Internal error. Failed to generate SVM key.
+          - name: KEYMANAGER_MESSAGE_ERR_VOL_KEY_ID_MISSING
+            message: Internal error. Volume encryption key is missing for a volume.
+          - name: KEYMANAGER_MESSAGE_ERR_VOL_UUID_MISSING
+            message: Internal error. UUID is missing for volume.
+          - name: KEYMANAGER_MESSAGE_ERR_VOL_DSID_MISSING
+            message: Internal error. Volume DSID is missing for volume.
+          - name: KEYMANAGER_MESSAGE_ERR_VOL_KEY_ID_INVALID
+            message: Internal error. Volume encryption key is invalid for a volume.
+          - name: VOLUME_ENCRYPTION_RDB_LOOKUP_FAILED
+            message: Internal error. Failed to get encryption operation status.
+          - name: VOLUME_ENCRYPTION_ERR_VOL_VDEK_BLOB_MISSING
+            message: Internal error. The encryption blob was not found.
+          - name: KEYMANAGER_MESSAGE_ERR_VOL_VDEK_BLOB_INVALID
+            message: Internal error. Volume has an invalid encryption blob.
+          - name: KEYMANAGER_MESSAGE_ERR_SVMKEK_MISSING
+            message: Internal error. The SVM key encryption key for the SVM is missing from a node.
+          - name: KEYMANAGER_MESSAGE_IKPKMS_ERR_GEN_VDEK_BLOB_REST
+            message: Internal error. Failed to generate VDEK blob.
+          - name: KEYMANAGER_MESSAGE_ERR_VOL_VDEK_BLOB_UPDATE
+            message: Internal error. Failed to update the VDEK blob for the volume.
+          - name: KEYMANAGER_MESSAGE_VSERVER_KEYSTORE_CONFIG_SWITCH_IN_PROGRESS_REKEY_REST
+            message: Rekey cannot be performed on the SVM while the enabled keystore configuration is being switched. If a previous attempt to switch the keystore configuration failed, or was interrupted, the system will continue to prevent rekeying for the SVM. Use the REST API PATCH method "/api/security/key-stores/{uuid}" to re-run and complete the operation.
+          - name: KEYMANAGER_MESSAGE_VSERVER_KEYSTORE_CONFIG_INITIALIZING_IN_PROGRESS_REKEY
+            message: Rekey cannot be performed on the SVM while the enabled keystore configuration is being initialized. Wait until the keystore is in the active state, and rerun the rekey operation.
+          - name: KEYMANAGER_MESSAGE_VSERVER_KEYSTORE_CONFIG_DISABLING_IN_PROGRESS_REKEY
+            message: Rekey cannot be performed on the SVM while the enabled keystore configuration is being disabled.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"

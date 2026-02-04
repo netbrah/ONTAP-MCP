@@ -1,0 +1,2155 @@
+/security/key-managers:
+  x-ntap-long-description:
+    tags: [ security ]
+    description: |
+      ## Overview
+      A key manager is a key management solution (software or dedicated hardware) that enables other ONTAP client modules to securely and persistently store keys for various uses. For example, WAFL uses the key management framework to store and retrieve the volume encryption keys that it uses to encrypt/decrypt data on NVE volumes. A key manager can be configured at both cluster scope and SVM, with one key manager allowed per SVM. The key management framework in ONTAP supports two mutually exclusive modes for persisting keys: external and onboard.<p/>
+      When an SVM is configured with external key management, the keys are stored on up to four primary key servers that are external to the system.<p/>
+      Once external key management is enabled for an SVM, primary key servers can be added or removed using the <i>/api/security/key-managers/{uuid}/key-servers</i> endpoint. See [`POST /security/key-managers/{uuid}/key-servers`] and [`DELETE /security/key-managers/{uuid}/key-servers/{server}`] for more details.<p/>
+      Setting up external key management dictates that the required certificates for securely communicating with the key server are installed prior to configuring the key manager. To install the required client and server_ca certificates, use the <i>/api/security/certificates/</i> endpoint. <p/>
+      See [`POST /security/certificates`], [`GET /security/certificates/uuid`] and [`DELETE /security/certificates/{uuid}`] for more details.<p/>
+      When an SVM is configured with the Onboard Key Manager, the keys are stored in ONTAP in wrapped format using a key hierarchy created using the salted hash of the passphrase entered when configuring the Onboard Key Manager. This model fits well for customers who use ONTAP to store their own data. <p/>
+
+      ## Examples
+
+      ### Creating an external key manager with 1 primary key server for a cluster
+
+      The example key manager is configured at the cluster-scope with one primary key server. Note that the UUIDs of the certificates are those that are already installed at the cluster-scope. Note the <i>return_records=true</i> query parameter is used to obtain the newly created key manager configuration.<br/>
+      ```
+      # The API:
+      POST /api/security/key-managers
+
+      # The call:
+      curl -X POST 'https://<mgmt-ip>/api/security/key-managers?return_records=true' -H 'accept: application/hal+json' -d "{ \"external\": { \"client_certificate\": { \"uuid\": \"5fb1701a-d922-11e8-bfe8-005056bb017d\" }, \"server_ca_certificates\": [ { \"uuid\": \"827d7d31-d6c8-11e8-b5bf-005056bb017d\" }],\"servers\": [ { \"server\": \"10.225.89.33:5696\" } ] } }"
+
+      # The response:
+      {
+        "num_records": 1,
+        "records": [
+          {
+            "uuid": "815e9462-dc57-11e8-9b2c-005056bb017d",
+            "external": {
+              "client_certificate": {
+                "uuid": "5fb1701a-d922-11e8-bfe8-005056bb017d"
+              },
+              "server_ca_certificates": [
+                {
+                  "uuid": "827d7d31-d6c8-11e8-b5bf-005056bb017d"
+                }
+              ],
+              "servers": [
+                {
+                  "server": "10.225.89.33:5696"
+                }
+              ]
+            },
+            "_links": {
+              "self": {
+                "href": "/api/security/key-managers/815e9462-dc57-11e8-9b2c-005056bb017d"
+              }
+            }
+          }
+        ]
+      }
+      ```
+      ---
+      ### Creating an external key manager with two primary key servers
+
+      The example key manager is configured at the cluster-scope with two primary key servers. Note that the UUIDs of the certificates are those that are already installed at the cluster-scope. Note the <i>return_records=true</i> query parameter is used to obtain the newly created key manager configuration.<br/>
+      ```
+      # The API:
+      POST /api/security/key-managers
+
+      # The call:
+      curl -X POST 'https://<mgmt-ip>/api/security/key-managers?return_records=true' -H 'accept: application/hal+json' -d "{ \"external\": { \"client_certificate\": { \"uuid\": \"5fb1701a-d922-11e8-bfe8-005056bb017d\" }, \"server_ca_certificates\": [ { \"uuid\": \"827d7d31-d6c8-11e8-b5bf-005056bb017d\" }],\"servers\": [ { \"server\": \"104.224.89.33:5696\" }, { \"server\": \"104.224.89.34:5696\" } ] } }"
+
+      # The response:
+      {
+        "num_records": 1,
+        "records": [
+          {
+            "uuid": "815e9462-dc57-11e8-9b2c-005056bb017d",
+            "external": {
+              "client_certificate": {
+                "uuid": "5fb1701a-d922-11e8-bfe8-005056bb017d"
+              },
+              "server_ca_certificates": [
+                {
+                  "uuid": "827d7d31-d6c8-11e8-b5bf-005056bb017d"
+                }
+              ],
+              "servers": [
+                {
+                  "server": "10.225.89.33:5696"
+                },
+                {
+                  "server": "10.225.89.34:5696"
+                }
+              ]
+            },
+            "_links": {
+              "self": {
+                "href": "/api/security/key-managers/815e9462-dc57-11e8-9b2c-005056bb017d"
+              }
+            }
+          }
+        ]
+      }
+      ```
+      ---
+      ### Creating an external key manager with 1 primary key server for an SVM
+      The example key manager is configured at the SVM-scope with one primary key server. Note that the UUIDs of the certificates are those that are already installed in that SVM. Note the <i>return_records=true</i> query parameter is used to obtain the newly created key manager configuration.<br/>
+      ```
+      # The API:
+      POST /api/security/key-managers
+
+      # The call:
+      curl -X POST 'https://<mgmt-ip>/api/security/key-managers?return_records=true' -H 'accept: application/hal+json' -d "{ \"svm\": { \"uuid\": \"216e6c26-d6c6-11e8-b5bf-005056bb017d\" }, \"external\": { \"client_certificate\": { \"uuid\": \"91dcaf7c-dbbd-11e8-9b2c-005056bb017d\" }, \"server_ca_certificates\": [ { \"uuid\": \"a4d4b8ba-dbbd-11e8-9b2c-005056bb017d\" }],\"servers\": [ { \"server\": \"10.225.89.34:5696\" } ] } }"
+
+      # The response:
+      {
+        "num_records": 1,
+        "records": [
+          {
+            "uuid": "80af63f2-dbbf-11e8-9b2c-005056bb017d",
+            "svm": {
+              "uuid": "216e6c26-d6c6-11e8-b5bf-005056bb017d"
+            },
+            "external": {
+              "client_certificate": {
+              "uuid": "91dcaf7c-dbbd-11e8-9b2c-005056bb017d"
+              },
+              "server_ca_certificates": [
+                {
+                  "uuid": "a4d4b8ba-dbbd-11e8-9b2c-005056bb017d"
+                }
+              ],
+              "servers": [
+                {
+                  "server": "10.225.89.34:5696"
+                }
+              ]
+            },
+            "_links": {
+              "self": {
+                "href": "/api/security/key-managers/80af63f2-dbbf-11e8-9b2c-005056bb017d"
+              }
+            }
+          }
+        ]
+      }
+      ```
+      ---
+      ### Creating an onboard key manager for a cluster
+      The following example shows how to create an onboard key manager for a cluster with the onboard key manager configured at the cluster-scope.<br/>
+      ```
+      # The API:
+      POST /api/security/key-managers
+
+      # The call:
+      curl -X POST 'https://<mgmt-ip>/api/security/key-managers' -H 'accept: application/hal+json' -d '{ "onboard": { "passphrase": "passphrase" } }'
+      ```
+      ---
+      ### Retrieving the key manager configurations for all clusters and SVMs
+      The following example shows how to retrieve all configured key managers along with their configurations.
+      ```
+      # The API:
+      GET /api/security/key-managers
+
+      # The call:
+      curl -X GET 'https://<mgmt-ip>/api/security/key-managers?fields=*' -H 'accept: application/hal+json'
+
+      # The response:
+      {
+        "records": [
+          {
+            "configuration": {
+              "uuid": "2345f09c-d6c9-11e8-b5bf-005056bb017d",
+              "name" : "default"
+            },
+            "uuid": "2345f09c-d6c9-11e8-b5bf-005056bb017d",
+            "scope": "svm",
+            "svm": {
+              "uuid": "0f22f8f3-d6c6-11e8-b5bf-005056bb017d",
+              "name": "vs0"
+            },
+            "external": {
+              "client_certificate": {
+                "uuid": "4cb15482-d6c8-11e8-b5bf-005056bb017d",
+                "_links": {
+                  "self": {
+                    "href": "/api/security/certificates/4cb15482-d6c8-11e8-b5bf-005056bb017d/"
+                  }
+                }
+              },
+              "server_ca_certificates": [
+                {
+                  "uuid": "8a17c858-d6c8-11e8-b5bf-005056bb017d",
+                  "_links": {
+                    "self": {
+                      "href": "/api/security/certificates/8a17c858-d6c8-11e8-b5bf-005056bb017d/"
+                    }
+                  }
+                }
+              ],
+              "servers": [
+                {
+                  "server": "10.2.30.4:5696",
+                  "timeout": 25,
+                  "username": "",
+                  "create_remove_timeout": 10,
+                  "_links": {
+                    "self": {
+                      "href": "/api/security/key-managers/2345f09c-d6c9-11e8-b5bf-005056bb017d/key-servers/10.2.30.4:5696/"
+                    }
+                  }
+                },
+                {
+                  "server": "vs0.local1:3678",
+                  "timeout": 25,
+                  "username": "",
+                  "secondary_key_servers": "1.1.1.1, secondarykeyserver.com",
+                  "create_remove_timeout": 10,
+                  "_links": {
+                    "self": {
+                      "href": "/api/security/key-managers/2345f09c-d6c9-11e8-b5bf-005056bb017d/key-servers/vs0.local1:3678/"
+                    }
+                  }
+                }
+              ]
+            },
+            "_links": {
+              "self": {
+                "href": "/api/security/key-managers/2345f09c-d6c9-11e8-b5bf-005056bb017d"
+              }
+            }
+          },
+          {
+           "configuration": {
+              "uuid": "815e9462-dc57-11e8-9b2c-005056bb017d",
+              "name" : "default"
+            },
+            "enabled": true,
+            "uuid": "815e9462-dc57-11e8-9b2c-005056bb017d",
+            "scope": "cluster",
+            "external": {
+              "client_certificate": {
+                "uuid": "5fb1701a-d922-11e8-bfe8-005056bb017d",
+                "_links": {
+                  "self": {
+                    "href": "/api/security/certificates/5fb1701a-d922-11e8-bfe8-005056bb017d/"
+                  }
+                }
+              },
+              "server_ca_certificates": [
+                {
+                  "uuid": "827d7d31-d6c8-11e8-b5bf-005056bb017d",
+                  "_links": {
+                    "self": {
+                      "href": "/api/security/certificates/827d7d31-d6c8-11e8-b5bf-005056bb017d/"
+                    }
+                  }
+                }
+              ],
+              "servers": [
+                {
+                  "server": "10.225.89.33:5696",
+                  "timeout": 25,
+                  "username": "",
+                  "create_remove_timeout": 10,
+                  "_links": {
+                    "self": {
+                      "href": "/api/security/key-managers/815e9462-dc57-11e8-9b2c-005056bb017d/key-servers/10.225.89.33:5696/"
+                    }
+                  }
+                }
+              ]
+            },
+            "_links": {
+              "self": {
+                "href": "/api/security/key-managers/815e9462-dc57-11e8-9b2c-005056bb017d"
+              }
+            }
+          }
+        ],
+        "num_records": 2,
+        "_links": {
+          "self": {
+            "href": "/api/security/key-managers?fields=*"
+          }
+        }
+      }
+      ```
+      ---
+      ### Retrieving the key manager configurations for all clusters and SVMs (showing Onboard Key Manager)
+      The following example shows how to retrieve all configured key managers along with their configurations.
+      ```
+      # The API:
+      GET /api/security/key-managers
+
+      # The call:
+      curl -X GET 'https://<mgmt-ip>/api/security/key-managers?fields=*' -H 'accept: application/hal+json'
+
+      # The response:
+      {
+        "records": [
+          {
+           "configuration": {
+              "uuid": "815e9462-dc57-11e8-9b2c-005056bb017d",
+              "name" : "default"
+            },
+            "enabled": true,
+            "uuid": "8ba52e0f-ae22-11e9-b747-005056bb7636",
+            "scope": "cluster",
+            "onboard": {
+              "enabled": true,
+              "key_backup": "--------------------------BEGIN BACKUP--------------------------\n <Backup Data> \n---------------------------END BACKUP---------------------------\n"
+            },
+            "volume_encryption": {
+              "supported": false,
+              "message": "The following nodes do not support volume granular encryption: ntap-vsim2.",
+              "code": 65536935
+            },
+            "is_default_data_at_rest_encryption_disabled": false
+          }
+        ],
+        "num_records": 1
+      }
+      ```
+      ---
+      ### Retrieving expensive fields such as, status.code and status.message, associated with a key manager.
+      These values are not retrieved by default with the 'fields=*' option.
+      The following example shows how to retrieve the expensive objects associated with a key manager.
+      ```
+      # The API:
+      GET /api/security/key-managers
+
+      # The call:
+      curl -X GET "https://<mgmt-ip>/api/security/key-managers?fields=status.message,status.code" -H 'accept: application/hal+jon'
+
+      # The response:
+      {
+        "records": [
+          {
+            "configuration": {
+              "uuid": "ac305d46-aef4-11e9-ad3c-005056bb7636",
+              "name" : "default"
+            },
+            "enabled": true,
+            "uuid": "ac305d46-aef4-11e9-ad3c-005056bb7636",
+            "status": {
+              "message": "No action needed at this time.",
+              "code": 65537200
+            },
+            "_links": {
+              "self": {
+                "href": "/api/security/key-managers/ac305d46-aef4-11e9-ad3c-005056bb7636"
+              }
+            }
+          }
+        ],
+        "num_records": 1,
+        "_links": {
+          "self": {
+            "href": "/api/security/key-managers?fields=status.message,status.code"
+          }
+        }
+      }
+      ```
+      ---
+      ### Retrieving a specific key manager configuration
+      The following example shows how to retrieve a specific key manager configuration.
+      ```
+      # The API:
+      GET /api/security/key-managers/{uuid}
+
+      # The call:
+      curl -X GET 'https://<mgmt-ip>/api/security/key-managers/<uuid>?fields=*' -H 'accept: application/hal+json'
+
+      # The response:
+      {
+        "configuration": {
+              "uuid": "2345f09c-d6c9-11e8-b5bf-005056bb017d",
+              "name" : "default"
+        },
+        "enabled": true,
+        "uuid": "2345f09c-d6c9-11e8-b5bf-005056bb017d",
+        "scope": "svm",
+        "svm": {
+          "uuid": "0f22f8f3-d6c6-11e8-b5bf-005056bb017d",
+          "name": "vs0"
+        },
+        "external": {
+          "client_certificate": {
+            "uuid": "4cb15482-d6c8-11e8-b5bf-005056bb017d",
+            "_links": {
+              "self": {
+                "href": "/api/security/certificates/4cb15482-d6c8-11e8-b5bf-005056bb017d/"
+              }
+            }
+          },
+          "server_ca_certificates": [
+            {
+              "uuid": "8a17c858-d6c8-11e8-b5bf-005056bb017d",
+              "_links": {
+                "self": {
+                  "href": "/api/security/certificates/8a17c858-d6c8-11e8-b5bf-005056bb017d/"
+                }
+              }
+            }
+          ],
+          "servers": [
+            {
+              "server": "10.2.30.4:5696",
+              "timeout": 25,
+              "username": "",
+              "create_remove_timeout": 10,
+              "_links": {
+                "self": {
+                  "href": "/api/security/key-managers/2345f09c-d6c9-11e8-b5bf-005056bb017d/key-servers/10.2.30.4:5696/"
+                }
+              }
+            },
+            {
+              "server": "vs0.local1:3678",
+              "timeout": 25,
+              "username": "",
+              "create_remove_timeout": 10,
+              "_links": {
+                "self": {
+                  "href": "/api/security/key-managers/2345f09c-d6c9-11e8-b5bf-005056bb017d/key-servers/vs0.local1:3678/"
+                }
+              }
+            }
+          ]
+        },
+        "_links": {
+          "self": {
+            "href": "/api/security/key-managers/2345f09c-d6c9-11e8-b5bf-005056bb017d"
+          }
+        }
+      }
+      ```
+      ---
+      ### Updating the configuration of an external key manager
+      The following example shows how to update the server_ca configuration of an external key manager.
+      ```
+      # The API:
+      PATCH /api/security/key-managers/{uuid}
+
+      # The call:
+      curl -X PATCH 'https://<mgmt-ip>/api/security/key-managers/<uuid>?' -H 'accept: application/hal+json' -d "{ \"external\": { \"server_ca_certificates\": [ { \"uuid\": \"23b05c58-d790-11e8-b5bf-005056bb017d\" }] } }"
+      ```
+      ---
+      ### Updating the passphrase of an Onboard Key Manager
+      The following example shows how to update the passphrase of a given key manager.
+      ```
+      # The API:
+      PATCH /api/security/key-managers/{uuid}
+
+      # The call:
+      curl -X PATCH 'https://<mgmt-ip>/api/security/key-managers/<uuid>?' -H 'accept: application/hal+json' -d "{ \"onboard\": { \"existing_passphrase\": \"existing_passphrase\", \"passphrase\": \"new_passphrase\" } }"
+      ```
+      ---
+      ### Synchronizing the passphrase of the Onboard Key Manager on a cluster
+      The following example shows how to synchronize the passphrase on a cluster where the Onboard Key Manager is already configured.
+      ```
+      # The API:
+      PATCH /api/security/key-managers/{uuid}
+
+      # The call:
+      curl -X PATCH 'https://<mgmt-ip>/api/security/key-managers/<uuid>?' -H 'accept: application/hal+json' -d "{  \"onboard\": {    \"existing_passphrase\": \"existing_passphrase\",    \"synchronize\": true  }}"
+      ```
+      ---
+      ### Configuring the Onboard Key Manager on a cluster
+      The following example shows how to configure the Onboard Key Manager on a cluster where the Onboard Key Manager is not configured, but is configured on an MetroCluster partner cluster.
+      ```
+      # The API:
+      POST /api/security/key-managers
+
+      # The call:
+      curl -X POST 'https://<mgmt-ip>/api/security/key-managers?return_records=false' -H  'accept: application/hal+json' -H  "Content-Type: application/json" -d "{  \"onboard\": {    \"passphrase\": \"passphrase\",    \"synchronize\": true  }}"
+      ```
+      ---
+      ### Deleting a configured key manager
+      The following example shows how to delete a key manager given its UUID.
+      ```
+      # The API:
+      DELETE /api/security/key-managers/{uuid}
+
+      # The call:
+      curl -X DELETE 'https://<mgmt-ip>/api/security/key-managers/<uuid>?' -H 'accept: application/hal+json'
+      ```
+      ---
+      ### Adding a primary key server to an external key manager
+      The following example shows how to add a primary key server to an external key manager.
+      ```
+      # The API:
+      POST /api/security/key-managers/{uuid}/key-servers
+
+      # The call:
+      curl -X POST 'https://<mgmt-ip>/api/security/key-managers/<uuid>/key-servers?return_records=true' -H 'accept: application/hal+json' -d "{ \"server\": \"10.225.89.34:5696\" }"
+
+      # The response:
+      {
+        "num_records": 1,
+        "records": [
+          {
+            "server": "10.225.89.34:5696",
+            "_links": {
+              "self": {
+                "href": "/api/security/key-managers/43e0c191-dc5c-11e8-9b2c-005056bb017d/key-servers/10.225.89.34%3A5696"
+              }
+            }
+          }
+        ]
+      }
+      ```
+      ---
+      ### Adding 2 primary key servers to an external key manager
+      The following example shows how to add 2 primary key servers to an external key manager. Note that the <i>records</i> property is used to add multiple primary key servers to the key manager in a single API call.
+
+      ```
+      # The API:
+      POST /api/security/key-managers/{uuid}/key-servers
+
+      # The call:
+      curl -X POST 'https://<mgmt-ip>/api/security/key-managers/<uuid>/key-servers?return_records=true' -H 'accept: application/hal+json' -d "{ \"records\": [ { \"server\": \"10.225.89.34:5696\" }, { \"server\": \"10.225.89.33:5696\" } ] }"
+
+      # The response:
+      {
+        "num_records": 1,
+        "records": [
+          {
+            "_links": {
+              "self": {
+                "href": "/api/security/key-managers/43e0c191-dc5c-11e8-9b2c-005056bb017d/key-servers/"
+              }
+            }
+          }
+        ]
+      }
+      ```
+      ---
+      ### Retrieving all the key servers configured in an external key manager
+      The following example shows how to retrieve all key servers configured in an external key manager.
+      ```
+      # The API:
+      GET /api/security/key-managers/{uuid}/key-servers
+
+      # The call:
+      curl -X GET 'https://<mgmt-ip>/api/security/key-managers/<uuid>/key-servers?fields=*' -H 'accept: application/hal+json'
+
+      # The response:
+      {
+        "records": [
+          {
+            "uuid": "43e0c191-dc5c-11e8-9b2c-005056bb017d",
+            "server": "10.225.89.33:5696",
+            "timeout": 25,
+            "username": "",
+            "secondary_key_servers": [
+              "1.1.1.1",
+              "secondarykeyserver.com"
+            ],
+            "create_remove_timeout": 10,
+            "_links": {
+              "self": {
+                "href": "/api/security/key-managers/43e0c191-dc5c-11e8-9b2c-005056bb017d/key-servers/10.225.89.33%3A5696"
+              }
+            }
+          },
+          {
+            "uuid": "43e0c191-dc5c-11e8-9b2c-005056bb017d",
+            "server": "10.225.89.34:5696",
+            "timeout": 25,
+            "username": "",
+            "create_remove_timeout": 10,
+            "_links": {
+              "self": {
+                "href": "/api/security/key-managers/43e0c191-dc5c-11e8-9b2c-005056bb017d/key-servers/10.225.89.34%3A5696"
+              }
+            }
+          }
+        ],
+        "num_records": 2,
+        "_links": {
+          "self": {
+            "href": "/api/security/key-managers/43e0c191-dc5c-11e8-9b2c-005056bb017d/key-servers?fields=*"
+          }
+        }
+      }
+      ```
+      ---
+      ### Retrieving a specific primary key server (and any associated secondary key servers) configured in an external key manager
+      The following example shows how to retrieve a specific primary key server (and any associated secondary key servers) configured in an external key manager.
+      ```
+      # The API:
+      GET /api/security/key-managers/{uuid}/key-servers/{server}
+
+      # The call:
+      curl -X GET 'https://<mgmt-ip>/api/security/key-managers/<uuid>/key-servers/{server}?fields=*' -H 'accept: application/hal+json'
+
+      # The response:
+      {
+        "uuid": "43e0c191-dc5c-11e8-9b2c-005056bb017d",
+        "server": "10.225.89.34:5696",
+        "timeout": 25,
+        "username": "",
+        "secondary_key_servers": [
+          "1.1.1.1",
+          "secondarykeyserver.com"
+        ],
+        "create_remove_timeout": 10,
+        "_links": {
+          "self": {
+            "href": "/api/security/key-managers/43e0c191-dc5c-11e8-9b2c-005056bb017d/key-servers/10.225.89.34:5696"
+          }
+        }
+      }
+      ```
+      ---
+      ### Retrieving a specific primary key server (and any associated secondary key servers) (and connectivity, an expensive field) configured in an external key manager
+      The following example shows how to retrieve a specific primary key server (and any associated secondary key servers) configured in an external key manager.
+      ```
+      # The API:
+      GET /api/security/key-managers/{uuid}/key-servers/{server}
+
+      # The call:
+      curl -X GET 'https://<mgmt-ip>/api/security/key-managers/<uuid>/key-servers/{server}?fields=**' -H 'accept: application/hal+json'
+
+      # The response:
+      {
+        "uuid": "43e0c191-dc5c-11e8-9b2c-005056bb017d",
+        "server": "10.225.89.34:5696",
+        "timeout": 25,
+        "username": "",
+        "secondary_key_servers": [
+          "1.1.1.1",
+          "secondarykeyserver.com"
+        ],
+        "create_remove_timeout": 10,
+        "connectivity": {
+          "cluster_availability": true,
+          "node_states": [
+            {
+              "node": {
+                "name": "sti65-vsim-ucs148i",
+                "uuid": "661843b3-a0e5-11ed-81ef-005056a7306b"
+              },
+              "state": "available"
+            },
+            {
+              "node": {
+                "name": "sti65-vsim-ucs148j",
+                "uuid": "551843b3-a0e5-11ed-81ef-005056a7306b"
+              },
+              "state": "not_responding"
+            }
+          ]
+        }
+      }
+      ```
+      ---
+      ### Retrieving the connectivity status of a specific node for a specific primary key server configured in an external key manager
+      The following example shows how to retrieve the connectivity status for a specific node for a specific primary key server configured in an external key manager.
+      ```
+      # The API:
+      GET /api/security/key-managers/{uuid}/key-servers/{server}
+
+      # The call:
+      curl -X GET 'https://<mgmt-ip>/api/security/key-managers/43e0c191-dc5c-11e8-9b2c-005056bb017d/key-servers/10.225.89.34:5696?fields=connectivity&connectivity.node_states.node.name=sti65-vsim-ucs148i&return_unmatched_nested_array_objects=false' -H 'accept: application/hal+json'
+
+      # The response:
+      {
+        "uuid": "43e0c191-dc5c-11e8-9b2c-005056bb017d",
+        "server": "10.225.89.34:5696",
+        "connectivity": {
+          "cluster_availability": true,
+          "node_states": [
+            {
+              "node": {
+                "name": "sti65-vsim-ucs148i",
+                "uuid": "661843b3-a0e5-11ed-81ef-005056a7306b"
+              },
+              "state": "available"
+            }
+          ]
+        }
+      }
+      ```
+      ---
+      ### Updating a specific primary key server configuration configured in an external key manager
+      The following example shows how to update a specific primary key server configured in an external key manager.
+      ```
+      # The API:
+      PATCH /api/security/key-managers/{uuid}/key-servers/{server}
+
+      # The call:
+      curl -X PATCH 'https://<mgmt-ip>/api/security/key-managers/<uuid>/key-servers/{server}' -H 'accept: application/hal+json' -d "{ \"timeout\": 45 }"
+
+      ```
+      ---
+      ### When the 'secondary_key_servers' field is populated in the PATCH API, the list of secondary key servers
+      ### associated with the primary key servers is replaced by the list of secondary key servers specified in the
+      ### 'secondary_key_servers' field.
+      The following example shows how to update the set of secondary key servers associated with a primary key server.
+      ```
+      # The API:
+      PATCH /api/security/key-managers/{uuid}/key-servers/{server}
+
+      # The call:
+      curl -X PATCH 'https://<mgmt-ip>/api/security/key-managers/<uuid>/key-servers/{server}' -H 'accept: application/hal+json' -d "{ \"secondary_key_servers\": [ \"1.1.1.1\", \"secondarykeyserver.com\" ] }"
+
+      ```
+      ---
+      ### Deleting a primary key server from an external key manager
+      The following example shows how to delete a primary key server from an external key manager.
+      ```
+      # The API:
+      DELETE /api/security/key-managers/{uuid}/key-servers/{server}
+
+      # The call:
+      curl -X DELETE 'https://<mgmt-ip>/api/security/key-managers/<uuid>/key-servers/{server}' -H 'accept: application/hal+json'
+
+      ```
+      ---
+      ### Bypass the out of quorum checks when deleting a primary key server from an external key manager
+      The following example shows how to bypass the out of quorum checks when deleting a primary key server from an external key manager.
+      ```
+      # The API:
+      DELETE /api/security/key-managers/{uuid}/key-servers/{server}
+
+      # The call:
+      curl -X DELETE 'https://<mgmt-ip>/api/security/key-managers/<uuid>/key-servers/{server}?force=true' -H 'accept: application/hal+json'
+
+      ```
+      ---
+
+  get:
+    tags: [ security ]
+    description: |
+      Retrieves key managers.
+
+      ### Expensive properties
+      There is an added computational cost to retrieving these properties. They are excluded from default GET results and must be explicitly requested using the `fields` query parameter. For more details, see [`Requesting specific fields`](#Requesting_specific_fields). Additionally, these fields are unavailable for inactive configurations as they are only relevant to active configurations.
+      * `status.message`
+      * `status.code`
+
+      ### Examples
+      - To retrieve basic information about a key manager:
+        ```
+        GET /security/key-managers
+        ```
+      - To retrieve specific fields, including expensive properties:
+        ```
+        GET /security/key-managers/?fields=status.code,status.message
+        ```
+
+      ### Related ONTAP commands
+      * `security key-manager show-key-store`
+      * `security key-manager external show`
+      * `security key-manager external show-status`
+      * `security key-manager onboard show-backup`
+    operationId: security_key_manager_collection_get
+    parameters:
+      - x-ntap-autogen-params: security_key_manager
+      - $ref: "#/parameters/fields_param"
+      - $ref: "#/parameters/max_records_param"
+      - $ref: "#/parameters/return_timeout_get_param"
+      - $ref: "#/parameters/return_records_get_param"
+      - $ref: "#/parameters/order_by_param"
+    responses:
+      200:
+        description: OK
+        schema:
+          $ref: "#/definitions/security_key_manager_response"
+      default:
+        description: Error
+        schema:
+          $ref: "#/definitions/error_response"
+  post:
+    tags: [ security ]
+    description: |
+      Creates a key manager.
+
+      ### Required properties
+      * `svm.uuid` or `svm.name` - Existing SVM in which to create a key manager.
+      * `external.client_certificate` - Client certificate. Required only when creating an external key manager.
+      * `external.server_ca_certificates` - Server CA certificates. Required only when creating an external key manager.
+      * `external.servers.server` - Primary Key servers. Required only when creating an external key manager.
+      * `onboard.passphrase` - Cluster-wide passphrase. Required only when creating an Onboard Key Manager.
+      * `synchronize` - Synchronizes missing onboard keys on any node in the cluster. Required only when creating an Onboard Key Manager at the partner site of a MetroCluster configuration.
+
+      ### Optional parameters:
+      * `create_inactive` - Create a configuration without enabling it. This flag is set to "false" by default.
+
+      ### Related ONTAP commands
+      * `security key-manager external enable`
+      * `security key-manager onboard enable`
+      * `security key-manager onboard sync`
+    operationId: security_key_manager_create
+    parameters:
+      - name: create_inactive
+        in: query
+        type: boolean
+        description: Indicates whether to create an active or inactive configuration.
+        required: false
+      - name: info
+        in: body
+        description: Info specification
+        schema:
+          $ref: "#/definitions/security_key_manager"
+    responses:
+      201:
+        description: Created
+        schema:
+          $ref: "#/definitions/security_key_manager_response"
+      202:
+        description: Accepted
+        schema:
+          $ref: "#/definitions/job_link_response"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et,kmip_messages.et,smf_errors.et
+          - name: SMF_PEER_NO_ADDRS
+            message: Failed to contact the peer cluster.
+          - name: SMF_PEER_CLIENT_CREATE_FAILED
+            message: Failed to contact the peer cluster.
+          - name: KEYMANAGER_MESSAGE_ERR_ONBOARD_PEER_CLUSTER_UNHEALTHY_ENABLE_CMD_REST
+            message: Failed to configure the Onboard Key Manager because the MetroCluster peer cluster is unhealthy. Verify that the peer cluster is online and healthy.
+          - name: KEYMANAGER_MESSAGE_POLICY_NOT_SUPPORTED_ON_ADMIN_VSERVER_REST
+            message: The key manager policy is not supported on the admin SVM.
+          - name: KEYMANAGER_MESSAGE_POLICY_INVALID
+            message: The key manager policy is invalid.
+          - name: KEYMANAGER_MESSAGE_ALREADY_CONFIGURED_ON_ADMIN_VSERVER
+            message: The Admin SVM has a key manager already configured.
+          - name: KEYMANAGER_MESSAGE_ALREADY_CONFIGURED
+            message: The SVM has key manager already configured.
+          - name: KEYMANAGER_MESSAGE_VDEKS_IN_CSERVER_KMIP
+            message: External key management cannot be configured as one or more volume encryption keys of the SVM are stored in cluster key management server.
+          - name: KEYMANAGER_MESSAGE_MTKM_MCC_UNSUPPORTED
+            message: Multitenant key management is not supported in MetroCluster configurations.
+          - name: KEYMANAGER_MESSAGE_ERROR_SERVER_MAX
+            message: A maximum of 4 active primary key servers are allowed.
+          - name: KEYMANAGER_MESSAGE_REST_EXTERNAL_MISSING_INFO_CREATE
+            message: External key management requires client and server CA certificates installed and with one or more key servers provided.
+          - name: KEYMANAGER_MESSAGE_PASSPHRASE_LEN_ERROR
+            message: The Onboard Key Manager passphrase length is incorrect.
+          - name: KEYMANAGER_MESSAGE_EXTERNAL_DUPLICATE_ENTRIES
+            message: Duplicate key management servers exist.
+          - name: KEYMANAGER_MESSAGE_UNABLE_TO_RETRIEVE_EXISTING_HOSTPORT
+            message: Failed to get existing key-server details for the SVM.
+          - name: KEYMANAGER_MESSAGE_EXTERNAL_ALREADY_EXIST
+            message: Key management servers already configured.
+          - name: KEYMANAGER_MESSAGE_CERTIFICATE_NOT_FOUND
+            message: The certificate is not installed.
+          - name: KEYMANAGER_MESSAGE_FAILED_TO_QUERY
+            message: Failed to query supported KMIP protocol versions.
+          - name: KEYMANAGER_MESSAGE_PARTNER_SITE_HAS_OKM_CONFIGURED
+            message: External key manager cannot be configured because this cluster is part of a MetroCluster configuration and the partner site of this MetroCluster configuration has Onboard Key Manager configured.
+          - name: KEYMANAGER_MESSAGE_REST_OKM_ADMIN_VSERVER_ONLY
+            message: The Onboard Key Manager is only supported for an admin SVM.
+          - name: KEYMANAGER_MESSAGE_ONBOARD_MCC_RUN_SYNC
+            message: The Onboard Key Manager has already been configured at the partner site. Use the CLI to sync the Onboard Key Manager with the same passphrase.
+          - name: KEYMANAGER_MESSAGE_ONBOARD_ENABLE_MULTIPLE_REST
+            message: The Onboard Key Manager is already configured. Use the PATCH to sync all nodes with the Onboard Key Manager configuration.
+          - name: KEYMANAGER_MESSAGE_DATA_AT_REST_ENCRYPTION_NOT_SUPPORTED
+            message: The platform does not support data at rest encryption.
+          - name: KEYMANAGER_MESSAGE_ERR_ONBOARD_PEER_CLUSTER_UNHEALTHY
+            message: Failed to setup the Onboard Key Manager because the MetroCluster peer is unhealthy.
+          - name: KEYMANAGER_MESSAGE_ERR_ONBOARD_PEER_CLUSTER_UNHEALTHY_ENABLE_CMD
+            message: Failed to setup the Onboard Key Manager because the MetroCluster peer is unhealthy.
+          - name: KEYMANAGER_MESSAGE_PARTNER_SITE_HAS_EKM_CONFIGURED
+            message: The Onboard Key Manager cannot be configured because this cluster is part of a MetroCluster configuration and the partner site has the external key manager configured.
+          - name: KEYMANAGER_MESSAGE_ERR_SETUP_ONBOARD_PARTIAL_FAILURE_V2
+            message: The Onboard Key Manager has failed to configure on some nodes in the cluster. Use the CLI to sync the Onboard Key Manager configuration on failed nodes.
+          - name: KEYMANAGER_MESSAGE_ERR_KEYGEN_CLUSKDB_CRYPTO_RETURN
+            message: Failed to generate cluster key encryption key.
+          - name: KEYMANAGER_MESSAGE_ERR_KEYGEN_CLUSKDB_RDB
+            message: Failed to add cluster key encryption key.
+          - name: KMIP_MESSAGE_NO_SECURE_SERVER_CONNECTION_BAD_SERVER_CERT
+            message: Failed to establish secure connection for a key management server due to incorrect server_ca certificates.
+          - name: KMIP_MESSAGE_NO_SECURE_SERVER_CONNECTION_BAD_CLIENT_CERT
+            message: Failed to establish secure connection for a key management server due to incorrect client certificates.
+          - name: KMIP_MESSAGE_NO_SECURE_SERVER_CONNECTION_ERROR
+            message: Failed to establish secure connection for a key management server due to Cryptsoft error.
+          - name: KEYMANAGER_MESSAGE_POST_SYNC_NEED_PASSPHRASE
+            message: The Onboard Key Manager passphrase must be provided when performing a POST/synchronize operation.
+          - name: KEYMANAGER_MESSAGE_POST_SYNC_HAVE_EXISTING_PASSPHRASE
+            message: The Onboard Key Manager existing_passphrase must not be provided when performing a POST/synchronize operation.
+          - name: KEYMANAGER_MESSAGE_POST_SYNC_FAIL_ONBOARD_CONFIGURED_LOCAL
+            message: Unable to sync/create Onboard Key Manager on the local cluster; Onboard Key Manager is already configured on the cluster.
+          - name: KEYMANAGER_MESSAGE_POST_SYNC_FAIL_ONBOARD_NOT_CONFIGURED_REMOTE
+            message: Unable to sync/create Onboard Key Manager on the local cluster; Onboard Key Manager is not configured on the partner cluster.
+          - name: KEYMANAGER_MESSAGE_POST_SYNC_FAIL_NOT_MCC
+            message: Unable to sync/create Onboard Key Manager on local cluster. This cluster is not part of a MetroCluster configuration.
+          - name: KEYMANAGER_MESSAGE_POST_SYNC_FAIL_INTERNAL
+            message: Internal error. Unable to sync the Onboard Key Manager on local cluster.
+          - name: KEYMANAGER_MESSAGE_POST_SYNC_FAIL
+            message: Unable to sync the Onboard Key Manager on local cluster.
+          - name: KEYMANAGER_MESSAGE_CREATE_INACTIVE_EKM_CSERVER_ONLY
+            message: Cannot create an inactive external key manager on this SVM because inactive external key managers can only be created on the admin SVM.
+          - name: KEYMANAGER_MESSAGE_CREATE_INACTIVE_EKM_CSERVER_BUT_EKM_ALREADY_CREATED
+            message: Cannot create an inactive external key manager on the admin SVM because an external key manager already exists on the admin SVM.
+          - name: KEYMANAGER_MESSAGE_CREATE_INACTIVE_EKM_CSERVER_NO_MCC
+            message: Cannot create an inactive external key manager on the admin SVM while MetroCluster is configured.
+          - name: KEYMANAGER_MESSAGE_CREATE_INACTIVE_EKM_CSERVER_DISABLED_FEATURE
+            message: An effective cluster version of ONTAP 9.16.1 or later is required to create an inactive external key manager on the admin SVM.
+          - name: KEYMANAGER_MESSAGE_OKM_CREATE_CONFIG_FAILED_REST
+            message: Failed to create inactive Onboard Key Manager configuration.
+          - name: KEYMANAGER_MESSAGE_CREATE_INACTIVE_OKM_CSERVER_BUT_OKM_ALREADY_CREATED_REST
+            message: Cannot create an inactive Onboard Key Manager on the admin SVM because an inactive Onboard Key Manager configuration already exists on the admin SVM.
+          - name: KEYMANAGER_MESSAGE_CREATE_INACTIVE_OKM_BAD_CONFIG_NAME_REST
+            message: Cannot specify the configuration name parameter. Only one Onboard Key Manager is supported for the admin SVM.
+          - name: KEYMANAGER_MESSAGE_CREATE_INACTIVE_OKM_CSERVER_NO_MCC
+            message: Cannot create an inactive Onboard Key Manager on the admin SVM while MetroCluster is configured.
+          - name: KEYMANAGER_MESSAGE_CREATE_INACTIVE_OKM_CSERVER_DISABLED_FEATURE
+            message: An effective cluster version of ONTAP 9.16.1 or later is required to create an inactive Onboard Key Manager configuration on the admin SVM.
+          - name: KEYMANAGER_MESSAGE_KMIP_NAE_VOLUMES_FOUND_REST
+            message: The key manager cannot be configured because the SVM has NAE volumes.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+/security/key-managers/{uuid}:
+  get:
+    tags: [ security ]
+    description: |
+      Retrieves key managers.
+
+      ### Expensive properties
+      There is an added computational cost to retrieving these properties. They are excluded from default GET results and must be explicitly requested using the `fields` query parameter. For more details, see [`Requesting specific fields`](#Requesting_specific_fields). Additionally, these fields are unavailable for inactive configurations as they are only relevant to active configurations.
+      * `status.message`
+      * `status.code`
+
+      ### Examples
+      - To retrieve basic information about a key manager:
+        ```
+        GET /security/key-managers/{uuid}
+        ```
+      - To retrieve specific fields, including expensive properties:
+        ```
+        GET /security/key-managers/{uuid}?fields=status.message
+        ```
+
+      ### Related ONTAP commands
+      * `security key-manager show-key-store`
+      * `security key-manager external show`
+      * `security key-manager external show-status`
+      * `security key-manager onboard show-backup`
+    operationId: security_key_manager_get
+    parameters:
+      - name: uuid
+        in: path
+        type: string
+        description: Key manager UUID
+        required: true
+      - $ref: "#/parameters/fields_param"
+    responses:
+      200:
+        description: OK
+        schema:
+          $ref: "#/definitions/security_key_manager"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et
+          - name: KEYMANAGER_MESSAGE_CONFIGURE_LOCAL_KEYSERVERS
+            message: There are no key servers configured for this SVM in the local cluster.
+          - name: KEYMANAGER_MESSAGE_CANT_CHECK_PARTNER_CLUSTER
+            message: This cluster is part of a MetroCluster configuration. Configure an external key manager on the partner cluster providing the same key servers before proceeding with any key manager operations.
+          - name: KEYMANAGER_MESSAGE_CONFIGURE_EKM_ON_PARTNER_SITE
+            message: This cluster is part of a MetroCluster configuration. Configure an external key manager on the partner cluster providing the same key servers before proceeding with any key manager operations.
+          - name: KEYMANAGER_MESSAGE_CONFIGURE_REMOTE_KEYSERVERS
+            message: There are no key servers configured for this SVM in the remote cluster.
+          - name: KEYMANAGER_MESSAGE_CANT_CHECK_PARTNER_CLUSTER_KEYSERVERS
+            message: Internal error. Failed to check for key servers on partner cluster.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+  patch:
+    tags: [ security ]
+    description: |
+      Updates a key manager.
+      **Note:** When validate_certificates is set, the API returns a 202 status code for successful creation of the job, otherwise an error is returned.
+
+      ### Required properties (when patching the Onboard Key Manager)
+      * `onboard.existing_passphrase` - Cluster-wide passphrase. Required only when synchronizing the passphrase of the Onboard Key Manager.
+      * `synchronize` - Synchronizes missing Onboard Key Manager keys on any node in the cluster. Required only when synchronizing the Onboard Key Manager keys in a local cluster.
+      ### Required properties (when patching an external key manager)
+      * `external.client_certificate` or `external.server_ca_certificates` - Client certificate or Server CA certificate. Required when modifying an external key manager.
+
+      ### Optional parameters (when patching an external key manager):
+      * `validate_certificates` - Validate certificates by testing the connection to the KMIP server using them. This flag is set to "false" by default.
+
+      ### Related ONTAP commands
+      * `security key-manager external modify`
+      * `security key-manager onboard sync`
+      * `security key-manager onboard update-passphrase`
+    operationId: security_key_manager_modify
+    parameters:
+      - name: uuid
+        in: path
+        type: string
+        description: Key manager UUID
+        required: true
+      - name: info
+        in: body
+        description: Key manager information
+        schema:
+          $ref: "#/definitions/security_key_manager"
+    responses:
+      200:
+        description: OK
+      202:
+        description: Accepted
+        schema:
+          $ref: "#/definitions/job_link_response"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et,kmip_messages.et
+          - name: KEYMANAGER_MESSAGE_EXTERNAL_NOT_CONFIGURED
+            message: External key management is not enabled for the SVM.
+          - name: KEYMANAGER_MESSAGE_CERTIFICATE_NOT_FOUND
+            message: The certificate is not installed.
+          - name: KEYMANAGER_MESSAGE_CLIENT_KEYS_MISMATCH
+            message: New client certificate public or private keys are different from the existing client certificate.
+          - name: KEYMANAGER_MESSAGE_FAILED_TO_QUERY
+            message: Failed to query supported KMIP protocol versions.
+          - name: KEYMANAGER_MESSAGE_REST_OKM_MISSING_INFO_MODIFY
+            message: Updating an onboard passphrase requires both new and existing cluster passphrase.
+          - name: KEYMANAGER_MESSAGE_SAME_AS_OLD_PASSPHRASE
+            message: The new passphrase is same as old passphrase.
+          - name: KEYMANAGER_MESSAGE_ONBOARD_PASSPHRASE_INCORRECT
+            message: The existing passphrase value provided does not match the configured passphrase.
+          - name: KEYMANAGER_MESSAGE_NEW_PASSPHRASE_LENGTH_ERROR
+            message: The passphrase does not match the accepted length.
+          - name: KEYMANAGER_MESSAGE_CC_MODE_PASSPHRASE_LEN_ERROR
+            message: The passphrase does not match the accepted length in common criteria mode.
+          - name: KEYMANAGER_MESSAGE_REPASSPHRASE_FAILED_CRYPTO
+            message: The passphrase update failed on some nodes.
+          - name: KEYMANAGER_MESSAGE_REPASSPHRASE_FAILED
+            message: The change of passphrase failed.
+          - name: KMIP_MESSAGE_NO_SECURE_SERVER_CONNECTION_BAD_SERVER_CERT
+            message: Failed to establish secure connection for a key management server due to incorrect server_ca certificates.
+          - name: KMIP_MESSAGE_NO_SECURE_SERVER_CONNECTION_BAD_CLIENT_CERT
+            message: Failed to establish secure connection for a key management server due to incorrect client certificates.
+          - name: KMIP_MESSAGE_NO_SECURE_SERVER_CONNECTION_ERROR
+            message: Failed to establish secure connection for a key management server due to Cryptsoft error.
+          - name: KEYMANAGER_MESSAGE_PATCH_SYNC_NEED_EXISTING_PASSPHRASE
+            message: The Onboard Key Manager existing_passphrase must be provided when performing a PATCH/synchronize operation.
+          - name: KEYMANAGER_MESSAGE_PATCH_SYNC_HAVE_PASSPHRASE
+            message: The Onboard Key Manager passphrase must not be provided when performing a PATCH/synchronize operation.
+          - name: KEYMANAGER_MESSAGE_POLICY_NOT_SUPPORTED_ON_ADMIN_VSERVER_REST
+            message: The key manager policy is not supported on the admin SVM.
+          - name: KEYMANAGER_MESSAGE_ERR_INACTIVE_CONFIG_MODIFY
+            message: Cannot modify an inactive key manager configuration.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+  delete:
+    tags: [ security ]
+    description: |
+      Deletes a key manager.
+
+      ### Related ONTAP commands
+      * `security key-manager external disable`
+      * `security key-manager onboard disable`
+    operationId: security_key_manager_delete
+    parameters:
+      - name: uuid
+        in: path
+        description: Key manager UUID
+        required: true
+        type: string
+    responses:
+      200:
+        description: OK
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et,kmip_messages.et,volume_encryption.et
+          - name: KEYMANAGER_MESSAGE_EXTERNAL_NOT_CONFIGURED
+            message: External key management is not enabled for the SVM.
+          - name: KEYMANAGER_MESSAGE_NSE_AK_IS_SET
+            message: One or more self-encrypting drives are assigned an authentication key.
+          - name: KEYMANAGER_MESSAGE_NSE_AK_UNKNOWN
+            message: Cannot determine authentication key presence on one or more self-encrypting drives.
+          - name: KEYMANAGER_MESSAGE_ENCRYPTED_CORES_FOUND
+            message: Encrypted kernel core files found.
+          - name: KEYMANAGER_MESSAGE_SAFE_TO_DISABLE_CHECK_FAILED
+            message: Failed to determine if key manager is safe to disable.
+          - name: KEYMANAGER_MESSAGE_FINDING_ENCRYPTED_VOLUMES_FAILED
+            message: Failed to determine if the SVM has any encrypted volumes.
+          - name: KEYMANAGER_MESSAGE_VDEKS_ON_KEYMANAGER
+            message: Encrypted volumes are found for the SVM.
+          - name: KEYMANAGER_MESSAGE_VDEKS_ON_ADMIN_MANAGED_DATA_VSERVERS_REST
+            message: Encrypted volumes are found for the cluster.
+          - name: KEYMANAGER_MESSAGE_VDEKS_ON_ADMIN_VSERVER_REST
+            message: Encrypted volumes are found on the admin Vserver.
+          - name: KEYMANAGER_MESSAGE_ENCRYPTED_VOLUMES_FOUND
+            message: Encrypted volumes are found for the SVM.
+          - name: VOLUME_ENCRYPTION_GET_ENCRYPTION_TYPE_FAIL
+            message: Failed to determine the type of encryption.
+          - name: VOLUME_ENCRYPTION_FAIL_NAE_REVERT
+            message: NAE aggregates are found in the cluster.
+          - name: KEYMANAGER_MESSAGE_WRAPPED_CPKEK_LOOKUP_FAILED
+            message: Failed to lookup onboard keys.
+          - name: KEYMANAGER_MESSAGE_ERR_KEYDEL_SVM_KEYID
+            message: Failed to delete the SVM Key ID.
+          - name: KEYMANAGER_MESSAGE_ERR_ONB_WRAP_KDB_DEL_FAIL
+            message: Internal error. Deletion of km_wrapped_kdb key database has failed for the Onboard Key Manager.
+          - name: KEYMANAGER_MESSAGE_ERR_ONB_CLUS_KDB_DEL_FAIL
+            message: Internal error. Deletion of cluster_kdb key database has failed for the Onboard Key Manager.
+          - x-ntap-error-table-end: END
+          - name: KEYMANAGER_MESSAGE_ERR_KM_DISABLE_ENC_CORE_CHECK_TIMEOUT
+            message: Failed to disable the key manager because of a timeout when checking for encrypted cores.
+        schema:
+          $ref: "#/definitions/error_response"
+
+/security/key-managers/{uuid}/key-servers:
+  get:
+    tags: [ security ]
+    description: |
+      Retrieves the list of key servers configured in an external key manager.
+
+      ### Expensive properties
+      There is an added computational cost to retrieving these properties. They are excluded from default GET results and must be explicitly requested using the `fields` query parameter. For more details, see [`Requesting specific fields`](#Requesting_specific_fields). Additionally, these fields are unavailable for inactive configurations as they are only relevant to active configurations.
+      * `connectivity.cluster_availability`
+      * `connectivity.node_states.node.name`
+      * `connectivity.node_states.node.uuid`
+      * `connectivity.node_states.state`
+
+      ### Examples
+        - To retrieve basic information about a key server:
+          ```
+          GET /security/key-managers/{uuid}/key-servers
+          ```
+        - To retrieve specific fields, including expensive properties:
+          ```
+          GET /security/key-managers/{uuid}/key-servers?fields=connectivity.cluster_availability,connectivity.node_states.node.name
+          ```
+
+      ### Related ONTAP commands
+      * `security key-manager external show`
+      * `security key-manager external show-status`
+    operationId: security_key_manager_key_servers_collection_get
+    parameters:
+      - name: uuid
+        in: path
+        type: string
+        description: External key manager UUID
+        required: true
+      - x-ntap-autogen-params: key_server
+      - $ref: "#/parameters/fields_param"
+      - $ref: "#/parameters/max_records_param"
+      - $ref: "#/parameters/return_timeout_get_param"
+      - $ref: "#/parameters/return_records_get_param"
+      - $ref: "#/parameters/order_by_param"
+    responses:
+      200:
+        description: OK
+        schema:
+          $ref: "#/definitions/key_server_response"
+      default:
+        description: Error
+        schema:
+          $ref: "#/definitions/error_response"
+
+  post:
+    tags: [ security ]
+    description: |
+      Adds primary key servers to a configured external key manager.
+
+      ### Required properties
+      * `uuid` - UUID of the external key manager.
+      * `server` - Primary Key server name.
+
+      ### Related ONTAP commands
+      * `security key-manager external add-servers`
+    operationId: security_key_manager_key_servers_create
+    parameters:
+      - name: uuid
+        in: path
+        type: string
+        description: External key manager UUID
+        required: true
+      - name: info
+        in: body
+        description: Information specification
+        schema:
+          $ref: "#/definitions/key_server"
+    responses:
+      201:
+        description: Created
+        schema:
+          $ref: "#/definitions/key_server_response"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et,kmip_messages.et
+          - name: KEYMANAGER_MESSAGE_EXTERNAL_NOT_CONFIGURED
+            message: External key management is not enabled for the SVM.
+          - name: KEYMANAGER_MESSAGE_MTKM_MCC_UNSUPPORTED
+            message: Multitenant key management is not supported in MetroCluster configurations.
+          - name: KEYMANAGER_MESSAGE_ERROR_SERVER_MAX
+            message: A maximum of 4 active primary key servers are allowed.
+          - name: KEYMANAGER_MESSAGE_EXTERNAL_DUPLICATE_ENTRIES
+            message: Duplicate key management servers exist.
+          - name: KEYMANAGER_MESSAGE_UNABLE_TO_RETRIEVE_EXISTING_HOSTPORT
+            message: Failed to get existing key-server details for the SVM.
+          - name: KEYMANAGER_MESSAGE_EXTERNAL_ALREADY_EXIST
+            message: Key management servers are already configured.
+          - name: KEYMANAGER_MESSAGE_CERTIFICATE_NOT_FOUND
+            message: The certificate is not installed.
+          - name: KEYMANAGER_MESSAGE_FAILED_TO_QUERY
+            message: Failed to query supported KMIP protocol versions.
+          - name: KMIP_MESSAGE_NO_SECURE_SERVER_CONNECTION_BAD_SERVER_CERT
+            message: Unable to establish secure connection to KMIP server due to incorrect server_ca certificates.
+          - name: KMIP_MESSAGE_NO_SECURE_SERVER_CONNECTION_BAD_CLIENT_CERT
+            message: Unable to establish secure connection to KMIP server due to incorrect client certificates.
+          - name: KMIP_MESSAGE_NO_SECURE_SERVER_CONNECTION_ERROR
+            message: Unable to establish secure connection to KMIP server due to Cryptsoft error.
+          - name: KEYMANAGER_MESSAGE_DISCOVER_FAILED
+            message: Unable to execute the command on the KMIP server.
+          - name: KEYMANAGER_MESSAGE_ERROR_SERVER_SECONDARY_ADD
+            message: Cannot add key server because it is already a secondary key server.
+          - name: KEYMANAGER_MESSAGE_ERR_NODE_OOQ
+            message: Cannot add a key server while a node is out quorum.
+          - name:  KEYMANAGER_MESSAGE_EXTERNAL_ALREADY_EXIST
+            message: The key management servers already exist.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+/security/key-managers/{uuid}/key-servers/{server}:
+  get:
+    tags: [ security ]
+    description: |
+      Retrieves key servers configured in an external key manager.
+
+      ### Expensive properties
+      There is an added computational cost to retrieving these properties. They are excluded from default GET results and must be explicitly requested using the `fields` query parameter. For more details, see [`Requesting specific fields`](#Requesting_specific_fields). Additionally, these fields are unavailable for inactive configurations as they are only relevant to active configurations.
+      * `connectivity.cluster_availability`
+      * `connectivity.node_states.node.name`
+      * `connectivity.node_states.node.uuid`
+      * `connectivity.node_states.state`
+
+      ### Examples
+        - To retrieve basic information about a key server:
+          ```
+          GET /security/key-managers/{uuid}/key-servers/{server}
+          ```
+        - To retrieve specific fields, including expensive properties:
+          ```
+          GET /security/key-managers/{uuid}/key-servers/{server}?fields=connectivity.cluster_availability,connectivity.node_states.node.name
+          ```
+
+      ### Related ONTAP commands
+      * `security key-manager external show`
+      * `security key-manager external show-status`
+    operationId: security_key_manager_key_servers_get
+    parameters:
+      - name: uuid
+        in: path
+        type: string
+        description: External key manager UUID
+        required: true
+      - name: server
+        in: path
+        type: string
+        description: Primary Key server configured in the key manager.
+        required: true
+      - $ref: "#/parameters/fields_param"
+    responses:
+      200:
+        description: OK
+        schema:
+          $ref: "#/definitions/key_server"
+      default:
+        description: Error
+        schema:
+          $ref: "#/definitions/error_response"
+  patch:
+    tags: [ security ]
+    description: |
+      Updates a primary key server.
+
+      ### Related ONTAP commands
+      * `security key-manager external modify-server`
+    operationId: security_key_manager_key_servers_modify
+    parameters:
+      - name: uuid
+        in: path
+        type: string
+        description: External key manager UUID
+        required: true
+      - name: server
+        in: path
+        type: string
+        description: Primary key server configured in the external key manager.
+        required: true
+      - name: info
+        in: body
+        description: Key server information
+        schema:
+          $ref: "#/definitions/key_server"
+    responses:
+      200:
+        description: OK
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et,kmip_messages.et
+          - name: KEYMANAGER_MESSAGE_NEED_VALUES_KEYSERVER_MODIFY
+            message: One or more of the following values must be provided \"timeout\", \"username\", \"password\", \"secondary_key_servers\", \"create_remove_timeout\".
+          - name: KEYMANAGER_MESSAGE_DISCOVER_FAILED
+            message: Unable to execute the command on the KMIP server.
+          - name: KEYMANAGER_MESSAGE_EXTERNAL_NOT_CONFIGURED
+            message: External key management is not enabled for the SVM.
+          - name: KEYMANAGER_MESSAGE_MTKM_MCC_UNSUPPORTED
+            message: Multitenant key management is not supported in MetroCluster configurations.
+          - name: KEYMANAGER_MESSAGE_KEYSERVER_NOT_FOUND
+            message: The key management server is not configured for the SVM.
+          - name: KEYMANAGER_MESSAGE_USERNAME_WITHOUT_PASSWORD
+            message: Missing password.
+          - name: KEYMANAGER_MESSAGE_PASSWORD_WITHOUT_USERNAME
+            message: Missing username.
+          - name: KEYMANAGER_MESSAGE_EXTERNAL_PRIMARY_DUPLICATE_OF_SECONDARY
+            message: A secondary key server is a duplicate of the associated primary key server.
+          - name: KEYMANAGER_MESSAGE_ERROR_TOO_MANY_SECONDARY_KEY_SERVERS
+            message: Exceeded maximum number of secondary key servers.
+          - name: KEYMANAGER_MESSAGE_EXTERNAL_SECONDARY_DUPLICATE_OF_SECONDARY
+            message: The list of secondary key servers contains duplicates.
+          - name: KEYMANAGER_MESSAGE_SECONDARY_IS_PRIMARY_MODIFY
+            message: A secondary key server is also a primary key server.
+          - name: KEYMANAGER_MESSAGE_ERR_NODE_OOQ
+            message: Cannot modify a key server while a node is out quorum.
+          - name: KEYMANAGER_MESSAGE_SECONDARY_CLUSTER_MIXED_VERSION
+            message: Support for adding secondary key servers requires an ECV of ONTAP 9.11.1 or later.
+          - name: KEYMANAGER_MESSAGE_EXTERNAL_SECONDARY_INVALID_FORMAT
+            message: A secondary key server address is not formatted correctly.
+          - name: KEYMANAGER_MESSAGE_MODIFY_KEYSERVER_ERR_ECV
+            message: Modifying key server port requires an effective cluster version of ONTAP 9.18.1 or later.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+  delete:
+    tags: [ security ]
+    description: |
+      Deletes a primary key server.
+
+      ### Optional parameters:
+      * `force` - Bypass Out of Quorum checks when deleting a primary key server. This flag is set to "false" by default.
+
+      ### Related ONTAP commands
+      * `security key-manager external remove-servers`
+    operationId: security_key_manager_key_servers_delete
+    parameters:
+      - name: uuid
+        in: path
+        type: string
+        description: External key manager UUID
+        required: true
+      - name: server
+        in: path
+        type: string
+        description: Primary key server configured in the external key manager.
+        required: true
+      - name: force
+        in: query
+        type: boolean
+        description: |
+          Set the force flag to "true" to bypass out of quorum checks when removing a primary key server.
+        default: false
+    responses:
+      200:
+        description: OK
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et
+          - name: KEYMANAGER_MESSAGE_SINGLE_SOURCE_KEY_IN_USE
+            message: The key server contains keys that are currently in use and not available from any other configured key server in the SVM.
+          - name: KEYMANAGER_MESSAGE_ERR_NODE_OOQ
+            message: Cannot remove a key server while a node is out of quorum.
+          - name: KEYMANAGER_MESSAGE_KEYSERVER_NOT_FOUND
+            message: The key management server is not configured for the SVM.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+/security/key-managers/{source.uuid}/migrate:
+  post:
+    tags: [ security ]
+    description: |
+      Migrates the keys belonging to an SVM between the cluster's key manager and the SVM's key manager. This operation can run for several minutes.
+
+      ### Required properties
+      * `source.uuid` - UUID of the source key manager.
+      * `uuid` - UUID of the destination key manager.
+
+      The UUID of onboard and external KMIP key manager can be fetched using [`GET /api/security/key-managers`].
+      The UUID of Azure Key Vault key manager can be fetched using [`GET /api/security/azure-key-vaults`].
+      The UUID of Google Cloud key manager can be fetched using [`GET /api/security/gcp-kms`].
+      The UUID of Amazon Web Services key manager can be fetched using [`GET /api/security/aws-kms`].
+      ### Related ONTAP commands
+      * `security key-manager key migrate`
+    operationId: security_key_manager_migrate
+    parameters:
+      - name: source.uuid
+        in: path
+        type: string
+        description: Migration source key manager UUID
+        required: true
+      - name: info
+        in: body
+        description: Information specification
+        schema:
+          description: Migration destination key manager UUID
+          $ref: "#/INLINE_REF/definitions/security_key_manager_reference"
+    responses:
+      202:
+        description: Accepted
+        schema:
+          $ref: "#/definitions/job_link_response"
+        x-ntap-go-skip-action: true
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et,kmip_messages.et
+          - name: KEYMANAGER_MESSAGE_MIGRATE_ERROR_UUID_TO_SVM
+            message: The migrate operation cannot be started because a UUID cannot be converted to an SVM name.
+          - name: KEYMANAGER_MESSAGE_MIGRATE_ERR_SAME_SRC_DEST
+            message: The source-uuid and UUID must be different values.
+          - name: KEYMANAGER_MESSAGE_KEY_MIGRATION_IS_NEEDED_REST
+            message: Check that all nodes of the cluster are healthy and retry the operation.
+          - name: KEYMANAGER_MESSAGE_AKV_MIGRATE_PRECHECK_FAILED_REST
+            message: Check that the Azure Key Vault Service is healthy and retry the operation.
+          - name: KEYMANAGER_MESSAGE_GCKMS_MIGRATE_PRECHECK_FAILED_REST
+            message: Check that the Google Cloud Key Management Service is healthy and retry the operation.
+          - name: KEYMANAGER_MESSAGE_MIGRATE_ERROR_UUID_TO_SVM
+            message: Cannot start migration because a key manager referenced by a provided UUID does not exist.
+          - name: KEYMANAGER_MESSAGE_ERR_UNSUPPORTED_MIGRATION
+            message: The specified migration option is not supported in this release.
+          - name: KEYMANAGER_MESSAGE_UNAVAILABLE_PDEK_ON_NODES
+            message: Top-level internal key protection key (KEK) is unavailable on one or more nodes.
+          - name: KEYMANAGER_MESSAGE_EKMIP_SERVER_STATUS_UNAVAILABLE_ON_NODE
+            message: Embedded KMIP server status is not available.
+          - name: KEYMANAGER_MESSAGE_GCKMS_KM_ALREADY_CONFIGURED_REST
+            message: Failed to configure the Google Cloud Key Management Service for an SVM because a key manager is already configured.
+          - name: KEYMANAGER_MESSAGE_MIGRATION_TO_IBM_KEY_LORE_UNSUPPORTED
+            message: Key migration to an IBM Key Lore key manager is not supported.
+          - name: KEYMANAGER_MESSAGE_VSERVER_KEYSTORE_CONFIG_SWITCH_IN_PROGRESS_KEY_MIGRATE_REST
+            message: Key migration cannot be performed on the SVM while the enabled keystore configuration is being switched. If a previous attempt to switch the keystore configuration failed, or was interrupted, the system will continue to prevent key migration for the SVM. Use the REST API PATCH method "/api/security/key-stores/{uuid}" to re-run and complete the operation.
+          - name: KEYMANAGER_MESSAGE_VSERVER_KEYSTORE_CONFIG_INITIALIZING_IN_PROGRESS_KEY_MIGRATE
+            message: Cannot perform key migration on the SVM while the keystore is being initialized. Wait until the keystore is in the active state, and rerun the key migration operation.
+          - name: KEYMANAGER_MESSAGE_VSERVER_KEYSTORE_CONFIG_DISABLING_IN_PROGRESS_KEY_MIGRATE
+            message: Cannot perform key migration on the SVM while the keystore is being disabled.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+/security/key-managers/{security_key_manager.uuid}/restore:
+  post:
+    tags: [ security ]
+    description: |
+      Retrieves and restores any current unrestored keys (associated with the storage controller) from the specified key management server.
+      ### Required properties
+      * `security_key_manager.uuid` - UUID of the key management server.
+
+      The UUID of the external key manager can be retrieved using [`GET /api/security/key-managers`].
+
+      ### Related ONTAP commands
+      * `security key-manager external restore`
+    operationId: security_key_manager_restore
+    parameters:
+      - name: security_key_manager.uuid
+        in: path
+        type: string
+        description: Key manager UUID.
+        required: true
+      - name: info
+        in: body
+        description: Information specification.
+        schema:
+          $ref: "#/definitions/security_key_manager_restore_keys"
+    responses:
+      202:
+        description: Accepted
+        schema:
+          $ref: "#/definitions/job_link_response"
+        x-ntap-go-skip-action: true
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et,kmip_messages.et
+          - name: KEYMANAGER_MESSAGE_KEYSERVER_NOT_FOUND
+            message: The key management server is not configured for the SVM.
+          - name: KEYMANAGER_MESSAGE_ERR_RESTORE_AK_FAILED
+            message: Internal error. Failed to restore the authentication key.
+          - name: KEYMANAGER_MESSAGE_ERR_RESTORE_VEK_FAILED
+            message: Internal error. Failed to restore the volume encryption key.
+          - name: KEYMANAGER_MESSAGE_CKS_ONLY_PRIMARY_KEY_SERVERS
+            message: This command only restores keys from primary key servers.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+/security/key-manager-configs:
+  x-ntap-long-description:
+    tags: [ security ]
+    description: |
+      ## Overview
+      Retrieves or modifies the key management configuration options. The following operations are supported:
+      * GET
+      * PATCH
+
+      ## Examples
+
+      ### Retrieving cluster-level key manager configurations
+
+      The following example shows how to retrieve cluster-level manager configurations.
+      ```
+      # The API:
+      GET /api/security/key-manager-configs
+
+      # The call:
+      curl -X GET 'https://<mgmt-ip>/api/security/key-manager-configs' -H 'accept: application/hal+json'
+
+      # The response:
+      {
+        "cc_mode_enabled": false,
+        "health_monitor_polling_interval": 15,
+        "cloud_kms_retry_count": 3,
+        "health_monitor_policy": {
+          "akv": {
+            "enabled": true,
+            "manage_volume_offline": true
+          },
+          "gcp": {
+            "enabled": true,
+            "manage_volume_offline": true
+          },
+          "aws": {
+            "enabled": true,
+            "manage_volume_offline": true
+          },
+          "ikp": {
+            "enabled": true,
+            "manage_volume_offline": true
+          },
+          "okm": {
+            "enabled": true,
+            "manage_volume_offline": true
+          },
+          "kmip": {
+            "enabled": true,
+            "manage_volume_offline": true
+          }
+        },
+        "_links": {
+          "self": {
+            "href": "/api/security/key-manager-configs"
+          }
+        }
+      }
+      ```
+      ---
+      ### Updating the cluster-level key manager configurations
+
+      The following example shows how to modify the "health_monitor_polling_interval" and "cloud_kms_retry_count" fields.<br/>
+      ```
+      # The API:
+      PATCH /api/security/key-manager-configs
+
+      # The call:
+      curl -X PATCH 'https://<mgmt-ip>/api/security/key-manager-configs' -H 'accept: application/hal+json' -d "{ \"health_monitor_polling_interval\" : \"20\", \"cloud_kms_retry_count\" : \"5\" }"
+      ```
+      ---
+      ### Updating the cluster-level key manager configurations
+
+      The following example shows how to modify the "cc_mode" and "passphrase" fields.<br/>
+      ```
+      # The API:
+      PATCH /api/security/key-manager-configs
+
+      # The call:
+      curl -X PATCH 'https://<mgmt-ip>/api/security/key-manager-configs' -H 'accept: application/hal+json' -d "{ \"cc_mode_enabled\" : \"true\", \"passphrase\": \"current_passphrase\" }"
+      ```
+      ---
+      ### Shows the keystore level health monitor policy
+
+      The following example shows how to retrieve the health monitor policies for Amazon Web Services and Google Cloud.<br/>
+      ```
+      # The API:
+      GET /api/security/key-manager-configs
+
+      # The call:
+      curl -X GET 'https://<mgmt-ip>/api/security/key-manager-configs?fields=health_monitor_policy.aws,health_monitor_policy.gcp' -H 'accept: application/hal+json'
+
+      # The response:
+      {
+        "health_monitor_policy": {
+          "gcp": {
+            "enabled": false,
+            "manage_volume_offline": false
+          },
+          "aws": {
+            "enabled": false,
+            "manage_volume_offline": false
+          }
+        },
+        "_links": {
+          "self": {
+            "href": "/api/security/key-manager-configs"
+          }
+        }
+      }
+      ```
+      ---
+      ### Updates the keytore level health monitor policy
+
+      The following example shows how to modify the Amazon Web Services "enabled" field and the Google Cloud "manage_volume_offline" field of the health monitor policy.<br/>
+      ```
+      # The API:
+      PATCH /api/security/key-manager-configs
+
+      # The call:
+      curl -X PATCH 'https://<mgmt-ip>/api/security/key-manager-configs' -H 'accept: application/hal+json' -d '{"health_monitor_policy": {"aws": {"enabled": "false"}, "gcp": {"manage_volume_offline": "false"}}}'
+      ```
+      ---
+  get:
+    tags: [ security ]
+    description: |
+      Retrieves key manager configurations.
+      Retrieves the key manager health monitor policy (fields=health_monitor_policy).
+
+      ### Related ONTAP commands
+      * `security key-manager config show`
+      * `security key-manager health policy show`
+
+    operationId: key_manager_config_get
+    parameters:
+      - $ref: "#/parameters/fields_param"
+    responses:
+      200:
+        description: OK
+        schema:
+          $ref: "#/definitions/key_manager_config"
+      default:
+        description: Error
+        schema:
+          $ref: "#/definitions/error_response"
+
+  patch:
+    tags: [ security ]
+    description: |
+      Updates key manager configurations.
+      Updates the key manager health monitor policy.
+
+      ### Related ONTAP commands
+      * `security key-manager config modify`
+      * `security key-manager health policy modify`
+
+    operationId: key_manager_config_modify
+    parameters:
+      - name: info
+        description: Info specification
+        in: body
+        schema:
+          $ref: "#/definitions/key_manager_config"
+    responses:
+      200:
+        description: OK
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et
+          - name: KEYMANAGER_MESSAGE_CC_MODE_ECV_NOT_KB
+            message: Common Criteria Mode requires an effective cluster version of ONTAP 9.4 or later.
+          - name: KEYMANAGER_MESSAGE_CC_MODE_DISABLED
+            message: Common Criteria mode is disabled on the cluster. Contact technical support for assistance in enabling Common Criteria mode.
+          - name: KEYMANAGER_MESSAGE_CC_MODE_MCC_NOT_SUPPORTED
+            message: MetroCluster cannot be configured while in Common Criteria mode.
+          - name: KEYMANAGER_MESSAGE_CC_MODE_ENABLED_REQUIRES_PASSPHRASE_REST
+            message: The passphrase field is required when changing cc_mode_enabled to true.
+          - name: KEYMANAGER_MESSAGE_CC_MODE_PASSPHRASE_LEN_ERROR_WITH_FIX
+            message: Passphrase length error.
+          - name: KEYMANAGER_MESSAGE_ONBOARD_PASSPHRASE_INCORRECT
+            message: Cluster-wide passphrase is incorrect.
+          - name: KEYMANAGER_MESSAGE_UNABLE_TO_MODIFY_POLLING_INTERVAL_NO_EKM
+            message: Unable to modify polling period because no external key management is configured on the cluster.
+          - name: KEYMANAGER_MESSAGE_MODIFY_POLLING_INTERVAL_ECV_NOT_SK
+            message: Modifying polling period requires an effective cluster version of ONTAP 9.10 or later.
+          - name: KEYMANAGER_MESSAGE_MODIFY_CLOUD_KMS_RETRY_ECV_NOT_MN
+            message: Modifying cloud keymanager retry count requires an effective cluster version of ONTAP 9.11 or later.
+          - name: KEYMANAGER_MESSAGE_ERR_ONB_KEYMANAGER_NOT_ENABLED_REST
+            message: The Onboard Key Manager is not enabled.
+          - name: KEYMANAGER_MESSAGE_HEALTH_MONITOR_FEATURE_NOT_AVAILABLE
+            message: Modifying the health monitor policy requires an effective cluster version of 9.15 or later.
+          - name: KEYMANAGER_MESSAGE_HEALTH_MONITOR_CAP_NOT_SET
+            message: The health monitor policy feature is not enabled.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+/security/key-managers/{security_key_manager.uuid}/keys/{node.uuid}/key-ids:
+  x-ntap-long-description:
+    tags: [ security ]
+    description: |
+      ## Overview
+      Retrieves the key manager keys on the give node. The following operations are supported:
+      * Get
+
+      ## Examples
+
+      ### Retrieving key manager key-id information for a node
+
+      The following example shows how to retrieve key-ids present on a node for a key manager.
+      ```
+      # The API:
+      GET /api/security/key-managers/{security_key_manager.uuid}/keys/{node.uuid}/key-ids
+
+      # The call:
+      curl -X GET 'https://<mgmt-ip>/api/security/key-managers/f4f98a48-8a5c-c548-cd03-c6335f5803a8/keys/00000000-0000-0000-0000-000000000000/key-ids/000000000000000002000000000005009ad4da8fea2cafe2bed803078b780ebe0000000000000c01' -H 'accept: application/hal+json'
+
+      # The response:
+        {
+          "security_key_manager": {
+            "uuid": "f4f98a48-8a5c-c548-cd03-c6335f5803a8"
+          },
+          "node": {
+            "uuid": "00000000-0000-0000-0000-000000000000"
+          },
+          "key_id": "000000000000000002000000000005009ad4da8fea2cafe2bed803078b780ebe0000000000000c01",
+          "svm": {
+            "name": "cluster-1"
+          },
+
+          "key_tag": "vsim1",
+          "key_type": "vek",
+          "restored": false,
+          "key_store": "onboard",
+          "key_user": "datavs",
+          "key_manager": "onboard",
+          "key_store_type": "okm",
+          "encryption_algorithm": "XTS-AES-256",
+          "_links": {
+            "self": {
+              "href": "/api/security/key-managers/f4f98a48-8a5c-c548-cd03-c6335f5803a8/keys/00000000-0000-0000-0000-000000000000/key-ids/000000000000000002000000000005009ad4da8fea2cafe2bed803078b780ebe0000000000000c01"
+            }
+          }
+        }
+      ```
+      ---
+      ### Retrieving key manager key-id information of a specific key-type for a node
+
+      The following example shows how to retrieve key-ids of a specific key-type present on a node for a key manager.
+      ```
+      # The API:
+      GET /api/security/key-manager/{security_key_manager.uuid}/keys/{node.uuid}/key-ids
+
+      # The call:
+      curl -X GET "https://<mgmt-ip>/api/security/key-managers/7c179931-044b-11ed-b7cd-005056bbc535/keys/44dac31e-0449-11ed-b7cd-005056bbc535/key-ids?key_type=nse_ak&return_records=true&return_timeout=15" -H "accept: application/json"
+
+      # The response:
+        {
+          "records": [
+            {
+              "key_server": "10.225.89.34:5696",
+              "key_id": "000000000000000002000000000001003d5c5f8c497e8e36aa80566e08749a3d0000000000000000",
+              "key_type": "nse_ak"
+            },
+            {
+              "key_server": "10.225.89.34:5696",
+              "key_id": "00000000000000000200000000000100c2dce9a3a15aeb8480db8d49c17d056c0000000000000000",
+              "key_type": "nse_ak"
+            }
+          ],
+          "num_records": 2
+        }
+
+  get:
+    tags: [ security ]
+    description: |
+      Retrieves key manager configurations.
+
+      ### Required properties
+      * `security_key_manager.uuid` - Key manager UUID.
+      * `node.uuid` - Node UUID.
+
+      ### Related ONTAP commands
+      * `security key-manager key query`
+      * `security key-manager key query -node <node>`
+      * `security key-manager key query -node <node> -key-manager <key_manager>`
+
+    operationId: key_manager_keys_collection_get
+    parameters:
+      - x-ntap-autogen-params: key_manager_keys
+      - $ref: "#/parameters/max_records_param"
+      - $ref: "#/parameters/return_records_get_param"
+      - $ref: "#/parameters/return_timeout_get_param"
+      - $ref: "#/parameters/order_by_param"
+      - name: security_key_manager.uuid
+        in: path
+        type: string
+        description: Key manager UUID.
+        required: true
+      - name: node.uuid
+        in: path
+        type: string
+        description: Node UUID.
+        required: true
+      - $ref: "#/parameters/fields_param"
+    responses:
+      200:
+        description: OK
+        schema:
+          $ref: "#/definitions/key_manager_keys_response"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et
+          - name: KEYMANAGER_MESSAGE_UUID_NOT_A_KEYMANAGER
+            message: The provided key manager UUID is not the UUID of a keymanager.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+/security/key-managers/{security_key_manager.uuid}/keys/{node.uuid}/key-ids/{key_id}:
+  get:
+    tags: [ security ]
+    description: |
+      Retrieves the key management keys information for the specified key_id.
+
+      ### Related ONTAP commands
+      * `security key-manager key query -key-id <key_id>`
+      * `security key-manager key query -key-id <key_id> -node <node>`
+      * `security key-manager key query -key-id <key_id> -node <node> -key-manager <key_manager>`
+
+    operationId: key_manager_keys_get
+    parameters:
+      - name: security_key_manager.uuid
+        in: path
+        type: string
+        description: Key manager UUID.
+        required: true
+      - name: node.uuid
+        in: path
+        type: string
+        description: Node UUID.
+        required: true
+      - name: key_id
+        in: path
+        type: string
+        description: Key identifier.
+        required: true
+      - $ref: "#/parameters/fields_param"
+    responses:
+      200:
+        description: OK
+        schema:
+          $ref: "#/definitions/key_manager_keys"
+      default:
+        description: Error
+        schema:
+          $ref: "#/definitions/error_response"
+
+/security/key-managers/{security_key_manager.uuid}/auth-keys:
+  x-ntap-long-description:
+    tags: [ security ]
+    description: |
+      ## Overview
+      Used to create and list authentication keys (NSE-AK).
+
+      ## Example
+
+      ### Creates an authentication key. Note: an external key  manager must be configured on the admin SVM, as the authentication key will be associated with the admin SVM.
+
+      The following example shows how to create an authentication key.
+      ```
+      # The API:
+      POST /api/security/key-managers/{security_key_manager.uuid}/auth-keys
+
+      # The call:
+      curl -X POST 'https://<mgmt-ip>/api/security/key-managers/5fb1701a-d922-11e8-bfe8-005056bb017d/auth-keys?return_timeout=15&return_records=true' -H 'accept: application/hal+json'
+
+      # The response:
+      {
+        "num_records": 1,
+        "records": [
+          {
+            "key_id": "00000000000000000200000000000100531d8cdc38437c2627b6b1726dd2675c0000000000000000",
+            "key_tag": "vsim1"
+          }
+        ]
+      }
+      ```
+      ---
+      ### Retrieving a list of all of the authentication keys associated with the admin SVM.
+      The following example shows how to retrieve a list of all of the authentication keys associated with the admin SVM.
+      ```
+      # The API:
+      GET /api/security/key-managers/{security_key_manager.uuid}/auth-keys
+
+      # The call:
+      curl -X GET 'https://<mgmt-ip>/api/security/key-managers/5fb1701a-d922-11e8-bfe8-005056bb017d/auth-keys?fields=*' -H 'accept: application/hal+json'
+
+      # The response:
+      {
+        "num_records": 2,
+        "records": [
+          {
+            "security_key_manager": {
+              "uuid": "d36a654d-14b4-11ed-b82e-005056bb8f59"
+            },
+            "key_id": "00000000000000000200000000000100052ab79fc51a430dbb16f1c0d2054cfe0000000000000000",
+            "key_tag": "vsim1"
+          },
+          {
+            "security_key_manager": {
+              "uuid": "d36a654d-14b4-11ed-b82e-005056bb8f59"
+            },
+            "key_id": "000000000000000002000000000001003f32ce2dc55d2764c07da74e722c179b0000000000000000",
+            "key_tag": "vsim1"
+          }
+        ]
+      }
+      ```
+      ---
+      ### Retrieving a specific authentication key associated with the admin SVM.
+      The following example shows how to a specific authentication key associated with the admin SVM and return the key-tag.
+      ```
+      # The API:
+      GET /api/security/key-managers/{security_key_manager.uuid}/auth-keys/{key-id}
+
+      # The call:
+      curl -X GET 'https://<mgmt-ip>/api/security/key-managers/5fb1701a-d922-11e8-bfe8-005056bb017d/auth-keys/0000000000000000020000000000010041a2dda969b0d179db8f1c78d629d0f10000000000000000?fields=key_tag' -H 'accept: application/hal+json'
+
+      # The response:
+      {
+        "security_key_manager": {
+          "uuid": "d36a654d-14b4-11ed-b82e-005056bb8f59"
+        },
+        "key_id": "0000000000000000020000000000010041a2dda969b0d179db8f1c78d629d0f10000000000000000",
+        "key_tag": "vsim1"
+      }
+
+  post:
+    tags: [ security ]
+    description: |
+      Creates an authentication key.
+
+      ### Related ONTAP commands
+      * `security key-manager key create`
+
+      ### Required properties
+      * `security_key_manager.uuid` - UUID of the external key manager.
+
+    operationId: key_manager_auth_key_create
+
+    parameters:
+      - name: security_key_manager.uuid
+        in: path
+        type: string
+        description: External key manager UUID
+        required: true
+      - name: info
+        in: body
+        description: Information specification
+        schema:
+          $ref: "#/definitions/key_manager_auth_key"
+    responses:
+      201:
+        description: Created
+        schema:
+          $ref: "#/definitions/key_manager_auth_key_response"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et,kmip_messages.et
+          - name: KEYMANAGER_MESSAGE_EXTERNAL_NOT_CONFIGURED
+            message: External key management is not enabled for the SVM.
+          - name: KEYMANAGER_MESSAGE_NO_KEYSERVER_FOUND
+            message: No key servers found for the SVM.
+          - name: KEYMANAGER_MESSAGE_CONFIGURE_KM_ON_PARTNER_SITE
+            message: External key management is not configured on the partner site.
+          - name: KEYMANAGER_MESSAGE_CREATEKEY_ERR_KEY_TAG_INVALID_CHAR
+            message: The key tag value provided contains invalid characters.
+          - name: KEYMANAGER_MESSAGE_ERR_KEYID_GEN_AK_FAILED
+            message: Failed to create a key-id for the authentication key.
+          - name: KEYMANAGER_MESSAGE_ERR_KEYGEN_AK_FAILED
+            message: Failed to create authentication key.
+          - name: KEYMANAGER_MESSAGE_PUSH_TO_KEY_SERVER_FAILED
+            message: Failed to push authentication key to any registered key servers.
+          - name: KEYMANAGER_MESSAGE_ERR_KEYGEN_NSE_AK_CRYPTO_CLEANUP_FAILED
+            message: Error cleaning up key database after key creation error.
+          - name: KEYMANAGER_MESSAGE_CREATEKEY_ERR_PASSPHRASE_LEN
+            message: Invalid passphrase length; passphrase must be 20-32 ASCII-range characters.
+          - name: KEYMANAGER_MESSAGE_ERROR_CREATEKEY_ERR_CANT_READ_AKS
+            message: Unable to determine the current number of configured authentication keys.
+          - name: KEYMANAGER_MESSAGE_ERROR_MAX_KEY_LIMIT
+            message: The maximum number of authentication keys are already configured.
+          - name: KMIP_MESSAGE_FAILED_TO_PUSH_AK
+            message: Failed to store authentication key on key server.
+          - name: KMIP_MESSAGE_INVALID_KEY_LENGTH
+            message: Invalid key length.
+          - name: KEYMANAGER_MESSAGE_CREATEKEY_ERR_KEY_TAG_INVALID_CHAR
+            message: The key-tag option cannot contain any spaces, tabs or new lines.
+          - name: KEYMANAGER_MESSAGE_AUTH_KEYS_NO_DKMIP_ON_CSERVER
+            message: External KMIP DKMIP keymanager not configured on administrative Vserver.
+          - name: KEYMANAGER_MESSAGE_AUTH_KEYS_GET_ERROR
+            message: Internal error while accessing keymanager database.
+          - name: KEYMANAGER_MESSAGE_AUTH_KEYS_UUID_NOT_SERVER
+            message: The UUID provided is not associated with the administrator SVM key manager.
+          - name: KEYMANAGER_MESSAGE_KEYSERVER_UNAVAILABLE_REST
+            message: One or more key servers are unavailable.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+  get:
+    tags: [ security ]
+    description: |
+      Retrieves a list of all authentication keys associated with the admin SVM.
+
+      ### Related ONTAP commands
+      * `security key-manager key query`
+
+      ### Required properties
+      * `security_key_manager.uuid` - UUID of the external key manager.
+
+    operationId: key_manager_auth_key_collection_get
+
+    parameters:
+      - x-ntap-autogen-params: key_manager_auth_key
+      - $ref: "#/parameters/fields_param"
+      - $ref: "#/parameters/max_records_param"
+      - $ref: "#/parameters/return_timeout_get_param"
+      - $ref: "#/parameters/return_records_get_param"
+      - $ref: "#/parameters/order_by_param"
+      - name: security_key_manager.uuid
+        in: path
+        type: string
+        description: External key manager UUID
+        required: true
+    responses:
+      200:
+        description: OK
+        schema:
+          $ref: "#/definitions/key_manager_auth_key_response"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et,kmip_messages.et
+          - name: KEYMANAGER_MESSAGE_EXTERNAL_NOT_CONFIGURED
+            message: External key management is not enabled for the SVM.
+          - name: KEYMANAGER_MESSAGE_NO_KEYSERVER_FOUND
+            message: No key servers found for the SVM.
+          - name: KEYMANAGER_MESSAGE_CONFIGURE_KM_ON_PARTNER_SITE
+            message: External key management is not configured on the partner site.
+          - name: KEYMANAGER_MESSAGE_AUTH_KEYS_NO_DKMIP_ON_CSERVER
+            message: External KMIP DKMIP keymanager not configured on administrative Vserver.
+          - name: KEYMANAGER_MESSAGE_AUTH_KEYS_GET_ERROR
+            message: Internal error while accessing keymanager database.
+          - name: KEYMANAGER_MESSAGE_AUTH_KEYS_UUID_NOT_SERVER
+            message: The UUID provided is not associated with the administrator SVM key manager.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+/security/key-managers/{security_key_manager.uuid}/auth-keys/{key_id}:
+  delete:
+    tags: [ security ]
+    description: |
+      Deletes an authentication key.
+
+      ### Related ONTAP commands
+      * `security key-manager key delete`
+
+      ### Required properties
+      * `security_key_manager.uuid` - UUID of the external key manager.
+      * `key_id` - Key ID of the authentication key to be deleted.
+
+    operationId: key_manager_auth_key_delete
+
+    parameters:
+      - name: security_key_manager.uuid
+        in: path
+        type: string
+        description: External key manager UUID
+        required: true
+      - name: key_id
+        in: path
+        type: string
+        description: Key ID of the authentication key to be deleted.
+        required: true
+    responses:
+      200:
+        description: OK
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et,kmip_messages.et
+          - name: KEYMANAGER_MESSAGE_CANNOT_DELETE_NON_AK
+            message: Key-id provided for deletion is not an authentication key.
+          - name: KEYMANAGER_MESSAGE_EXTERNAL_NOT_CONFIGURED
+            message: External key management is not enabled for the SVM.
+          - name: KEYMANAGER_MESSAGE_KEY_IN_USE
+            message: Authentication key-Id provided for deletion is in use.
+          - name: KMIP_MESSAGE_FAILED_TO_DELETE_KEY
+            message: Failed to delete key from an external key server.
+          - name: KEYMANAGER_MESSAGE_AUTH_KEYS_NO_DKMIP_ON_CSERVER
+            message: External KMIP DKMIP keymanager not configured on administrative Vserver.
+          - name: KEYMANAGER_MESSAGE_AUTH_KEYS_GET_ERROR
+            message: Internal error while accessing keymanager database.
+          - name: KEYMANAGER_MESSAGE_AUTH_KEYS_UUID_NOT_SERVER
+            message: The UUID provided is not associated with the administrator SVM key manager.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+  get:
+    tags: [ security ]
+    description: |
+      Retrieves the authentication key identified by the 'key_id' and associated with the admin SVM.
+
+      ### Related ONTAP commands
+      * `security key-manager key query`
+
+      ### Required properties
+      * `security_key_manager.uuid` - UUID of the external key manager.
+      * `key_id` - Key ID of the authentication key to be retrieved.
+
+    operationId: key_manager_auth_key_get
+
+    parameters:
+      - x-ntap-autogen-params: key_manager_auth_key
+      - $ref: "#/parameters/fields_param"
+      - $ref: "#/parameters/max_records_param"
+      - $ref: "#/parameters/return_timeout_get_param"
+      - $ref: "#/parameters/return_records_get_param"
+      - $ref: "#/parameters/order_by_param"
+      - name: security_key_manager.uuid
+        in: path
+        type: string
+        description: External key manager UUID
+        required: true
+      - name: key_id
+        in: path
+        type: string
+        description: Key ID of the authentication key to be retrieved.
+        required: true
+    responses:
+      200:
+        description: OK
+        schema:
+          $ref: "#/definitions/key_manager_auth_key"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et,kmip_messages.et
+          - name: KEYMANAGER_MESSAGE_EXTERNAL_NOT_CONFIGURED
+            message: External key management is not enabled for the SVM.
+          - name: KEYMANAGER_MESSAGE_NO_KEYSERVER_FOUND
+            message: No key servers found for the SVM.
+          - name: KEYMANAGER_MESSAGE_CONFIGURE_KM_ON_PARTNER_SITE
+            message: External key management is not configured on the partner site.
+          - name: KEYMANAGER_MESSAGE_AUTH_KEYS_NO_DKMIP_ON_CSERVER
+            message: External KMIP DKMIP keymanager not configured on administrative Vserver.
+          - name: KEYMANAGER_MESSAGE_AUTH_KEYS_GET_ERROR
+            message: Internal error while accessing keymanager database.
+          - name: KEYMANAGER_MESSAGE_AUTH_KEYS_UUID_NOT_SERVER
+            message: The UUID provided is not associated with the administrator SVM key manager.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"

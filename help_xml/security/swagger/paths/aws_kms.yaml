@@ -1,0 +1,612 @@
+/security/aws-kms:
+  x-ntap-long-description:
+    tags: [ security ]
+    description: |
+      ## Overview
+      Amazon Web Services Key Management Services (AWS KMS) is a cloud key
+      management service (KMS) that provides a secure store for secrets. This
+      feature allows ONTAP to securely store its encryption keys using AWS KMS.
+      In order to use AWS KMS with ONTAP, you must first create a
+      Customer Master Key (CMK) in AWS KMS and provide an Access Key ID and
+      Secret Access Key for a user that has appropriate access to the newly
+      created CMK in the AWS KMS."
+
+      ## Examples
+      ### Enabling AWS KMS for an SVM
+
+      The following example shows how to enable AWS KMS at the SVM-scope. Note the <i>return_records=true</i> query parameter is used to obtain the newly created key manager configuration.
+      ```
+      # The API:
+      POST /api/security/aws-kms
+      # The call:
+      curl -X POST 'https://<mgmt-ip>/api/security/aws-kms?return_records=true' -H 'accept: application/hal+json' -d '{"svm":{"uuid":"f36ff553-e713-11ea-bd56-005056bb4222" }, "region": "us-east-1", "key_id": "kmip-aws", "access_key_id": "<AWS-ACCESS-KEY-ID>", "secret_access_key": "<AWS-SECRET-ACCESS-KEY>"}'
+      # The response:
+      {
+        "num_records": 1,
+        "records": [
+            {
+            "uuid": "f72098a2-e908-11ea-bd56-005056bb4222",
+            "svm": {
+                "uuid": "f36ff553-e713-11ea-bd56-005056bb4222",
+                "name": "vs0"
+            },
+            "region": "us-east-1",
+            "key_id": "kmip-aws",
+            "access_key_id": "<AWS-ACCESS-KEY-ID>",
+            "_links": {
+                "self": {
+                "href": "/api/security/aws-kms/f72098a2-e908-11ea-bd56-005056bb4222"
+                    }
+                }
+            }
+        ]
+      }
+      ```
+      ---
+      ### Retrieving all AWS KMS configurations
+      The following example shows how to retrieve all AWS KMS configurations.
+      ```
+      # The API:
+      GET /api/security/aws-kms
+      # The call:
+      curl -X GET 'https://<mgmt-ip>/api/security/aws-kms?fields=*'
+      # The response:
+      {
+        "records": [
+            {
+            "uuid": "f72098a2-e908-11ea-bd56-005056bb4222",
+            "scope": "svm",
+            "svm": {
+                "uuid": "f36ff553-e713-11ea-bd56-005056bb4222",
+                "name": "vs0"
+            },
+            "region": "us-east-1",
+            "key_id": "kmip-aws",
+            "access_key_id": "<AWS-ACCESS-KEY-ID>",
+            "service": "KMS",
+            "default_domain": "amazonaws.com",
+            "polling_period": 60,
+            "timeout": 10,
+            "_links": {
+                "self": {
+                "href": "/api/security/aws-kms/f72098a2-e908-11ea-bd56-005056bb4222"
+                    }
+                }
+            }
+        ],
+        "num_records": 1,
+        "_links": {
+            "self": {
+            "href": "/api/security/aws-kms?fields=*"
+            }
+        }
+      }
+      ```
+      ---
+      ### Retrieving a specific AWS KMS configuration
+      The following example shows how to retrieve information for a specific AWS KMS configuration.
+      ```
+      # The API:
+      GET /api/security/aws-kms/{uuid}
+      # The call:
+      curl -X GET 'https://<mgmt-ip>/api/security/aws-kms/f72098a2-e908-11ea-bd56-005056bb4222?fields=*'
+      # The response:
+      {
+        "uuid": "f72098a2-e908-11ea-bd56-005056bb4222",
+        "scope": "svm",
+        "svm": {
+            "uuid": "f36ff553-e713-11ea-bd56-005056bb4222",
+            "name": "vs0"
+        },
+        "region": "us-east-1",
+        "key_id": "kmip-aws",
+        "access_key_id": "<AWS-ACCESS-KEY-ID>",
+        "service": "KMS",
+        "default_domain": "amazonaws.com",
+        "polling_period": 60,
+        "timeout": 10,
+        "_links": {
+            "self": {
+            "href": "/api/security/aws-kms/f72098a2-e908-11ea-bd56-005056bb4222"
+            }
+        }
+      }
+      ```
+      ---
+      ### Retrieving the advanced properties of an AWS configured for a specific SVM
+      These values are not retrieved by default with the 'fields=*' option.
+      The following example retrieves the advanced properties of a configured AWS for a specific SVM; there is an added computational cost in retrieving their values. The properties are not populated for either a collection GET or an instance GET unless they are explicitly requested using the `fields` query parameter or GET for all advanced properties is enabled.
+      ```
+      # The API:
+      GET /api/security/aws-kms
+
+      # The call:
+      curl -X GET 'https://<mgmt-ip>/api/security/aws-kms/7052c6c0-a503-11ec-a68f-005056ac75a0/?fields=state,amazon_reachability,ekmip_reachability'
+
+      # The response:
+      {
+        "uuid": "d70efc34-aa13-11ec-a059-005056ac7c32",
+        "state": {
+          "cluster_state": true,
+          "message": "",
+          "code": "0"
+        },
+        "amazon_reachability": {
+          "reachable": true,
+          "message": "",
+          "code": "0"
+        },
+        "ekmip_reachability": [
+          {
+            "reachable": true,
+            "message": "",
+            "code": "0",
+            "node": {
+              "uuid": "817f544f-a98d-11ec-ae20-005056ac7c32",
+              "name": "node1",
+              "_links": {
+                "self": {
+                  "href": "/api/cluster/nodes/817f544f-a98d-11ec-ae20-005056ac7c32"
+                }
+              }
+            }
+          },
+          {
+            "reachable": true,
+            "message": "",
+            "code": "0",
+            "node": {
+              "uuid": "84b3f5f3-a98d-11ec-9ff4-005056acfbfe",
+              "name": "node2",
+              "_links": {
+                "self": {
+                  "href": "/api/cluster/nodes/84b3f5f3-a98d-11ec-9ff4-005056acfbfe"
+                }
+              }
+            }
+          }
+        ],
+        "_links": {
+          "self": {
+            "href": "/api/security/aws-kms/d70efc34-aa13-11ec-a059-005056ac7c32"
+          }
+        }
+      }
+      ```
+      ---
+      ### Updating the "access_key_id" of a specific AWS KMS configuration
+      The following example shows how to update the "access_key_id" for a specific AWS KMS configuration.
+      ```
+      # The API:
+      PATCH /api/security/aws-kms/{uuid}
+      # The call:
+      curl -X PATCH 'https://<mgmt-ip>/api/security/aws-kms/f72098a2-e908-11ea-bd56-005056bb4222/' -d '{"access_key_id": "<AWS-ACCESS-KEY-ID>", "secret_access_key": "<AWS-SECRET-ACCESS-KEY>"}'
+      ```
+      ---
+      ### Updating a specific AWS KMS configuration to allow it to use a proxy.
+      The following example shows how to update a specific AWS KMS configuration to allow the AWS KMS instance to use a proxy.
+      ```
+      # The API:
+      PATCH /api/security/aws-kms/{uuid}
+      # The call:
+      curl -X PATCH 'https://<mgmt-ip>/api/security/aws-kms/f72098a2-e908-11ea-bd56-005056bb4222/' -d '{"default_domain": "216.9", "host": "172.20.216.9", "port": 8000, "service": "10", "verify_host": false, "verify_ip": false}'
+      ```
+      ---
+      ### Deleting a specific AWS KMS configuration
+      The following example shows how to delete a specific AWS KMS configuration.
+      ```
+      # The API:
+      DELETE /api/security/aws-kms/{uuid}
+      # The call;
+      curl -X DELETE 'https://<mgmt-ip>/api/security/aws-kms/f72098a2-e908-11ea-bd56-005056bb4222'
+      ```
+      ---
+      ### Restoring keys from a KMIP server
+      The following example shows how to restore keys for a AWS KMS configuration.
+      ```
+      # The API:
+      POST /api/security/aws-kms/{uuid}/restore
+      # The call:
+      curl -X POST 'https://<mgmt-ip>/api/security/aws-kms/33820b57-ec90-11ea-875e-005056bbf3f0/restore'
+      ```
+      ---
+
+  post:
+    tags: [ security ]
+    description: |
+      Configures the AWS KMS configuration for the specified SVM.
+
+      ### Required properties
+      * `access_key_id` - AWS access key ID of the user who has the appropriate access to AWS KMS.
+      * `secret_access_key` - AWS secret access key for the access key ID provided.
+      * `svm.uuid` or `svm.name` - Existing SVM in which to create an AWS KMS.
+      * `region` - AWS region of the AWS KMS.
+      * `key_id` - AWS Key ID
+
+      ### Optional properties
+      * `service` - AWS service type.
+      * `default_domain` - AWS KMS default domain.
+      * `host` - AWS KMS host's hostname.
+      * `port` - AWS KMS port.
+      * `proxy_type` - Type of proxy (http, https, etc.), if proxy configuration is used.
+      * `proxy_host` - Proxy hostname if proxy configuration is used.
+      * `proxy_port` - Proxy port number if proxy configuration is used.
+      * `proxy_username` - Proxy username if proxy configuration is used.
+      * `proxy_password` - Proxy password if proxy configuration is used.
+      * `polling_period` - Polling period in minutes.
+      * `encryption_context` - Additional layer of authentication and logging.
+
+      ### Related ONTAP commands
+      * `security key-manager external aws enable`
+    operationId: aws_kms_create
+    parameters:
+      - name: info
+        in: body
+        description: Info specification
+        schema:
+          $ref: "#/definitions/aws_kms"
+    responses:
+      201:
+        description: Created
+        schema:
+          $ref: "#/definitions/aws_kms_response"
+      202:
+        description: Accepted
+        schema:
+          $ref: "#/definitions/job_link_response"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et,cert_ssl_errors.et
+          - name: KEYMANAGER_MESSAGE_AWSKMS_INVALID_CONFIG
+            message: Failed to enable the Amazon Web Service Key Management Service for an SVM due to an invalid secret access key.
+          - name: KEYMANAGER_MESSAGE_AWSKMS_FEATURE_NOT_AVAILABLE
+            message: The Amazon Web Service Key Management Service (AWSKMS) cannot be enabled because all nodes in the cluster are not running a version that supports the AWSKMS feature.
+          - name: KEYMANAGER_MESSAGE_AWSKMS_CAP_NOT_SET
+            message: The Amazon Web Service Key Management Service is disabled on the cluster. For further assistance, contact technical support.
+          - name: KEYMANAGER_MESSAGE_AWSKMS_NOT_CONFIGURED_REST
+            message: The Amazon Web Service Key Management Service is not configured for this SVM.
+          - name: KEYMANAGER_MESSAGE_AWSKMS_UNSUPPORTED_ON_CSERVER
+            message: The Amazon Web Service Key Management Service is not supported for the admin SVM.
+          - name: KEYMANAGER_MESSAGE_AWSKMS_KM_ALREADY_CONFIGURED_REST
+            message: Failed to configure Amazon Web Service Key Management Service for an SVM because a key manager has already been configured for the SVM.
+          - name: KEYMANAGER_MESSAGE_AWSKMS_MCC_UNSUPPORTED
+            message: The Amazon Web Service Key Management Service is not supported in MetroCluster configurations.
+          - name: KEYMANAGER_MESSAGE_AWSKMS_VDEKS_IN_CSERVER_KM
+            message: The Amazon Web Service Key Management Service cannot be configured for an SVM because one or more volume encryption keys of the SVM are stored on the admin SVM.
+          - name: KEYMANAGER_MESSAGE_AWSKMS_FAILED_TO_STORE_ACCESS_KEY
+            message: Failed to store the secret access key.
+          - name: KEYMANAGER_MESSAGE_ERR_NODE_OOQ
+            message: Nodes are out of quorum.
+          - name: KEYMANAGER_MESSAGE_CLUSTER_LIF_MISSING
+            message: Failed to find a LIF with Cluster role on node. One or more nodes may be out of quorum.
+          - name: CERTIFICATE_SUBTYPE_NOT_SUPPORTED_FOR_CREATE
+            message: Specifying \\\"-subtype\\\" when creating a certificate is not supported.
+          - name: CERTIFICATE_SERIAL_SPECIFIED
+            message: You cannot specify a value for serial as it is generated automatically.
+          - name: CERTIFICATE_TYPE_NOT_SUPPORTED
+            message: Certificate type not supported for create operation.
+          - name: CERTIFICATE_UNSUPPORTED_KEY_SIZE
+            message: Specified key size is not supported.
+          - name: CERTIFICATE_FIPS_UNSUPPORTED_KEY_SIZE
+            message: Specified key size is not supported in FIPS mode.
+          - name: CERTIFICATE_FIPS_UNSUPPORTED_HASH_FUNCTION
+            message: Specified hash function is not supported in FIPS mode.
+          - name: KEYMANAGER_MESSAGE_KMIP_NAE_VOLUMES_FOUND_REST
+            message: The key manager cannot be configured because the SVM has NAE volumes.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+  get:
+    tags: [ security ]
+    description: |
+      Retrieves all AWS KMS instances configured for all clusters and SVMs.
+
+      ### Related ONTAP commands
+      * `security key-manager external aws show`
+      * `security key-manager external aws check`
+    operationId: aws_kms_collection_get
+    parameters:
+      - x-ntap-autogen-params: aws_kms
+      - $ref: "#/parameters/fields_param"
+      - $ref: "#/parameters/max_records_param"
+      - $ref: "#/parameters/return_timeout_get_param"
+      - $ref: "#/parameters/return_records_get_param"
+      - $ref: "#/parameters/order_by_param"
+    responses:
+      200:
+        description: OK
+        schema:
+          $ref: "#/definitions/aws_kms_response"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et
+          - name: KEYMANAGER_MESSAGE_AWSKMS_REACHABILITY_FAILED_ON_NODES
+            message: The Amazon Web Service Key Management Service is unreachable from one or more nodes.
+          - name: KEYMANAGER_MESSAGE_EKMIP_SERVER_STATUS_UNAVAILABLE_ON_NODE
+            message: Embedded KMIP server status not available.
+          - name: KEYMANAGER_MESSAGE_UNAVAILABLE_PDEK_ON_NODES
+            message: Top-level internal key protection key (KEK) unavailable on one or more nodes.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+/security/aws-kms/{uuid}:
+  get:
+    tags: [ security ]
+    description: |
+      Retrieves the AWS KMS configuration for the SVM specified by the UUID.
+
+      ### Related ONTAP commands
+      * `security key-manager external aws show`
+      * `security key-manager external aws check`
+    operationId: aws_kms_get
+    parameters:
+      - name: uuid
+        in: path
+        type: string
+        description: AWS KMS UUID
+        required: true
+      - $ref: "#/parameters/fields_param"
+    responses:
+      200:
+        description: OK
+        schema:
+          $ref: "#/definitions/aws_kms"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et
+          - name: KEYMANAGER_MESSAGE_AWSKMS_REACHABILITY_FAILED_ON_NODES
+            message: The Amazon Web Service Key Management Service is unreachable from one or more nodes.
+          - name: KEYMANAGER_MESSAGE_EKMIP_SERVER_STATUS_UNAVAILABLE_ON_NODE
+            message: Embedded KMIP server status not available.
+          - name: KEYMANAGER_MESSAGE_UNAVAILABLE_PDEK_ON_NODES
+            message: Top-level internal key protection key (KEK) unavailable on one or more nodes.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+  patch:
+    tags: [ security ]
+    description: |
+      Updates the AWS KMS configuration.
+
+      ### Optional properties
+      * `region` - AWS region of the AWS KMS.
+      * `service` - AWS service type.
+      * `default_domain` - AWS KMS default domain.
+      * `port` - AWS KMS port.
+      * `proxy_type` - Type of proxy (http, https, etc.), if proxy configuration is used.
+      * `proxy_host` - Proxy hostname if proxy configuration is used.
+      * `proxy_port` - Proxy port number if proxy configuration is used.
+      * `proxy_username` - Proxy username if proxy configuration is used.
+      * `proxy_password` - Proxy password if proxy configuration is used.
+      * `polling_period` - Polling period in minutes.
+      * `timeout` - AWS Connection timeout, in seconds.
+      * `verify` - Set to true to verify the AWS KMS host.
+      * `verify_host` - Set to true to verify the AWS KMS host's hostname.
+      * `verify_ip` - Set to true to verify the AWS KMS host's IP address.
+      * `host` - AWS KMS host's hostname.
+      * `secret_access_key` - AWS secret access key for the access key ID provided.
+      * `access_key_id` - AWS access key ID of the user with the appropriate access to AWS KMS.
+      * `skip_verify` - Set to true to bypass verification of the user provided access_key_id and secret_access_key.
+      * `encryption_context` - Additional layer of authentication and logging.
+
+      ### Related ONTAP commands
+      * `security key-manager external aws update-config`
+      * `security key-manager external aws update-credentials`
+
+    operationId: aws_kms_modify
+    parameters:
+      - name: uuid
+        in: path
+        type: string
+        description: AWS KMS UUID
+        required: true
+      - name: info
+        in: body
+        description: AWS KMS information
+        schema:
+          $ref: "#/definitions/aws_kms"
+    responses:
+      200:
+        description: OK
+      202:
+        description: Accepted
+        schema:
+          $ref: "#/definitions/job_link_response"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et
+          - name: KEYMANAGER_MESSAGE_NO_MODIFY_INPUTS_REST
+            message: No inputs provided for the REST API PATCH request.
+          - name: KEYMANAGER_MESSAGE_AWSKMS_NOT_CONFIGURED_REST
+            message: Amazon Web Service Key Management Service is not configured for SVM.
+          - name: KEYMANAGER_MESSAGE_AWSKMS_FAILED_TO_STORE_ACCESS_KEY
+            message: Failed to store the secret access key.
+          - name: KEYMANAGER_MESSAGE_AWSKMS_EMPTY_SECRET_ACCESS_KEY
+            message: Secret access key cannot be empty.
+          - name: KEYMANAGER_MESSAGE_AWSKMS_EMPTY_ACCESS_KEY_ID
+            message: Access key ID cannot be empty.
+          - name: KEYMANAGER_MESSAGE_AWSKMS_UNREACHABLE_UPDATE_CRED
+            message: Unable to connect to the Amazon Web Service Key Management Service (AWSKMS) using these credentials.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+  delete:
+    tags: [ security ]
+    description: |
+      Deletes an AWS KMS configuration.
+
+      ### Related ONTAP commands
+      * `security key-manager external aws disable`
+    operationId: aws_kms_delete
+    parameters:
+      - name: uuid
+        in: path
+        description: AWS KMS UUID
+        required: true
+        type: string
+    responses:
+      200:
+        description: OK
+      202:
+        description: Accepted
+        schema:
+          $ref: "#/definitions/job_link_response"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et,volume_encryption.et
+          - name: KEYMANAGER_MESSAGE_AWSKMS_NOT_CONFIGURED_REST
+            message: Amazon Web Service Key Management Service is not configured for SVM.
+          - name: KEYMANAGER_MESSAGE_UNABLE_TO_RETRIEVE_EXISTING_HOSTPORT
+            message: Internal error. Failed to get existing key-server details for the given SVM.
+          - name: KEYMANAGER_MESSAGE_SAFE_TO_DISABLE_CHECK_FAILED
+            message: Internal error. Failed to determine if it is safe to disable key manager.
+          - name: VOLUME_ENCRYPTION_GET_ENCRYPTION_TYPE_FAIL
+            message: Internal error. Failed to get encryption type.
+          - name: VOLUME_ENCRYPTION_FAIL_NAE_REVERT_REST
+            message: NAE aggregates found in the cluster.
+          - name: VOLUME_ENCRYPTION_FAIL_ROOT_VOL
+            message: One or more nodes in the cluster have the root volume encrypted using NVE (NetApp Volume Encryption).
+          - name: KEYMANAGER_MESSAGE_FINDING_ENCRYPTED_VOLUMES_FAILED
+            message: Internal error. Failed to determine if the given SVM has any encrypted volumes.
+          - name: KEYMANAGER_MESSAGE_VDEKS_ON_KEYMANAGER_REST
+            message: Volume encryption keys (VEK) for one or more encrypted volumes are stored on the key manager configured for the given SVM.
+          - name: KEYMANAGER_MESSAGE_ERR_VOL_KEY_ID_MISSING
+            message: Internal error. Volume encryption key is missing for a volume.
+          - name: KEYMANAGER_MESSAGE_ERR_VOL_KEY_ID_INVALID
+            message: Internal error. Volume encryption key is invalid for a volume.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+/security/aws-kms/{aws_kms.uuid}/restore:
+  post:
+    tags: [ security ]
+    description: |
+      Restores the keys for an SVM from a configured AWS KMS.
+
+      ### Related ONTAP commands
+      * `security key-manager external AWS restore`
+
+    operationId: aws_kms_restore
+    parameters:
+      - name: aws_kms.uuid
+        in: path
+        type: string
+        description: UUID of the existing AWS KMS configuration.
+        required: true
+    responses:
+      202:
+        description: Accepted
+        schema:
+          $ref: "#/definitions/job_link_response"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et
+          - name: KEYMANAGER_MESSAGE_AWSKMS_NOT_CONFIGURED_REST
+            message: The Amazon Web Service Key Management Service is not configured for the given SVM.
+          - name: KEYMANAGER_MESSAGE_RESTORE_FAILED_WITH_REASON
+            message: Unable to restore all keys.
+          - name: KEYMANAGER_MESSAGE_MISSING_WRAPPED_KEY_FROM_INTERNAL_DB
+            message: Missing wrapped top-level internal key protection key (KEK) from internal database.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+/security/aws-kms/{aws_kms.uuid}/rekey-external:
+  post:
+    tags: [ security ]
+    description: |
+      Rekeys or re-versions the AWS KMS Key Encryption Key (KEK) for the given AWS KMS.
+
+      ### Related ONTAP commands
+      * `security key-manager external aws rekey-external`
+
+    operationId: aws_kms_rekey_external
+    parameters:
+      - name: aws_kms.uuid
+        in: path
+        type: string
+        description: UUID of the existing AWS KMS configuration.
+        required: true
+      - name: info
+        in: body
+        description: AWS KMS information.
+        required: true
+        schema:
+          $ref: "#/definitions/aws_kms_key"
+    responses:
+      202:
+        description: Accepted
+        schema:
+          $ref: "#/definitions/job_link_response"
+        x-ntap-go-skip-action: true
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et
+          - name: KEYMANAGER_MESSAGE_AWSKMS_NOT_CONFIGURED_REST
+            message: AWS KMS is not configured for the given SVM.
+          - name: KEYMANAGER_MESSAGE_REKEY_AFTER_MIGRATION_REST
+            message: One or more volume encryption keys for encrypted volumes of this data SVM are stored in the key manager configured for the admin SVM. Use the REST API POST method to migrate this data SVM's keys from the admin SVM's key manager before running the rekey operation.
+          - name: KEYMANAGER_MESSAGE_AWSKMS_REKEY_EXTERNAL_FAILED_ON_NODES_REST
+            message: External rekey failed on one or more nodes.
+          - name: KEYMANAGER_MESSAGE_MISSING_PDEK_ON_NODE
+            message: Internal Error. Missing top-level internal key protection key (KEK) on a node.
+          - name: KEYMANAGER_MESSAGE_ERR_GET_UNWRAPPED_KEY
+            message: Internal error. Failed to get unwrapped key for a given key ID.
+          - name: KEYMANAGER_MESSAGE_VSERVER_KEYSTORE_CONFIG_SWITCH_IN_PROGRESS_REKEY_REST
+            message: Rekey cannot be performed on the SVM while the enabled keystore configuration is being switched. If a previous attempt to switch the keystore configuration failed, or was interrupted, the system will continue to prevent rekeying for the SVM. Use the REST API PATCH method "/api/security/key-stores/{uuid}" to re-run and complete the operation.
+          - name: KEYMANAGER_MESSAGE_VSERVER_KEYSTORE_CONFIG_INITIALIZING_IN_PROGRESS_REKEY
+            message: Rekey cannot be performed on the SVM while the enabled keystore configuration is being initialized. Wait until the keystore is in the active state, and rerun the rekey operation.
+          - name: KEYMANAGER_MESSAGE_VSERVER_KEYSTORE_CONFIG_DISABLING_IN_PROGRESS_REKEY
+            message: Rekey cannot be performed on the SVM while the enabled keystore configuration is being disabled.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+/security/aws-kms/{aws_kms.uuid}/rekey-internal:
+  post:
+    tags: [ security ]
+    description: |
+      Rekeys SVM KEK for the given AWS KMS.
+
+      ### Related ONTAP commands
+      * `security key-manager external aws rekey-internal`
+
+    operationId: aws_kms_rekey_internal
+    parameters:
+      - name: aws_kms.uuid
+        in: path
+        type: string
+        description: UUID of the existing AWS KMS configuration.
+        required: true
+
+    responses:
+      202:
+        description: Accepted
+        schema:
+          $ref: "#/definitions/job_link_response"
+      default:
+        description:  |
+          - x-ntap-error-table-start: keymanager_messages.et
+          - name: KEYMANAGER_MESSAGE_AWSKMS_NOT_CONFIGURED_REST
+            message: AWS KMS is not configured for the given SVM.
+          - name: KEYMANAGER_MESSAGE_REKEY_WITHOUT_ENC_VOLUMES_REST
+            message: There are no existing internal keys for the SVM. A rekey operation is allowed for an SVM with one or more encryption keys.
+          - name: KEYMANAGER_MESSAGE_REKEY_AFTER_MIGRATION_REST
+            message: One or more volume encryption keys for encrypted volumes of this data SVM are stored in the key manager configured for the admin SVM. Use the REST API POST method to migrate this data SVM's keys from the admin SVM's key manager to this data SVM's key manager before running the rekey operation.
+          - name: KEYMANAGER_MESSAGE_REKEY_AFTER_BLOCKED
+            message: Unable to successfully encrypt or decrypt because the configured external key manager for the given SVM is in a blocked state.
+          - name: KEYMANAGER_MESSAGE_ALL_NODES_NOT_ONLINE
+            message: Internal error. All nodes in the cluster are not currently online.
+          - name: KEYMANAGER_MESSAGE_VSERVER_KEYSTORE_CONFIG_SWITCH_IN_PROGRESS_REKEY_REST
+            message: Rekey cannot be performed on the SVM while the enabled keystore configuration is being switched. If a previous attempt to switch the keystore configuration failed, or was interrupted, the system will continue to prevent rekeying for the SVM. Use the REST API PATCH method "/api/security/key-stores/{uuid}" to re-run and complete the operation.
+          - name: KEYMANAGER_MESSAGE_VSERVER_KEYSTORE_CONFIG_INITIALIZING_IN_PROGRESS_REKEY
+            message: Rekey cannot be performed on the SVM while the enabled keystore configuration is being initialized. Wait until the keystore is in the active state, and rerun the rekey operation.
+          - name: KEYMANAGER_MESSAGE_VSERVER_KEYSTORE_CONFIG_DISABLING_IN_PROGRESS_REKEY
+            message: Rekey cannot be performed on the SVM while the enabled keystore configuration is being disabled.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"

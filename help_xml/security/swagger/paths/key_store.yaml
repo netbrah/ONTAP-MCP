@@ -1,0 +1,345 @@
+
+/security/key-stores:
+  x-ntap-long-description:
+    tags: [ security ]
+    description: |
+      ## Overview
+      A keystore describes a key-manager configuration, specifically the type of key-manager and whether the configuration is currently enabled for the configured SVM.<p/>
+
+      ## Examples
+      ---
+      ### Retrieving information for all configured key managers
+      The following example shows how to retrieve information about all configured key managers.
+      ```
+      # The API:
+      GET /api/security/key-stores
+
+      # The call:
+      curl -X GET 'https://<mgmt-ip>/api/security/key-stores?fields=*' -H 'accept: application/hal+json'
+
+      # The response:
+      {
+        "records": [
+          {
+            "type": "okm",
+            "configuration": {
+              "name": "default",
+              "uuid": "ec8711c9-4e9f-11ef-b477-005056bb677e"
+            },
+            "uuid": "ec8711c9-4e9f-11ef-b477-005056bb677e",
+            "enabled": true,
+            "location": "onboard",
+            "scope": "cluster",
+            "state": "active"
+          },
+          {
+            "type": "kmip",
+            "configuration": {
+              "name": "default",
+              "uuid": "d81f43cd-4e9f-11ef-b477-005056bb677e"
+            },
+            "uuid": "d81f43cd-4e9f-11ef-b477-005056bb677e",
+            "enabled": false,
+            "location": "external",
+            "scope": "cluster"
+          },
+          {
+            "type": "kmip",
+            "configuration": {
+              "name": "default",
+              "uuid": "7da22185-4ea0-11ef-b477-005056bb677e"
+            },
+            "uuid": "7da22185-4ea0-11ef-b477-005056bb677e",
+            "enabled": true,
+            "location": "external",
+            "scope": "svm",
+            "svm": {
+              "name": "vs0",
+              "uuid": "3cbe691b-4ea0-11ef-b477-005056bb677e"
+            },
+            "state": "active"
+          }
+        ],
+        "num_records": 3
+      }
+      ```
+      ---
+      ### Retrieving a specific keystore by its UUID
+      The following example shows how to retrieve information about a specific keystore.
+      ```
+      # The API:
+      GET /api/security/key-stores/{uuid}
+
+      # The call:
+      curl -X GET 'https://<mgmt-ip>/api/security/key-stores/33421d82-0a8d-11ec-ae88-005056bb5955?fields=*' -H 'accept: application/hal+json'
+
+      # The response:
+      {
+        "type": "okm",
+        "configuration": {
+          "name": "default",
+          "uuid": "ec8711c9-4e9f-11ef-b477-005056bb677e"
+        },
+        "uuid": "ec8711c9-4e9f-11ef-b477-005056bb677e",
+        "enabled": true,
+        "location": "onboard",
+        "scope": "cluster",
+        "state": "active"
+      }
+      ```
+      ---
+      ### Enabling a specific keystore configuration
+      The following example shows how to enable a specific keystore configuration.
+      ```
+      # The API:
+      PATCH /api/security/key-stores/{uuid}
+
+      # The call:
+      curl -X PATCH 'https://<mgmt-ip>/api/security/key-stores/33421d82-0a8d-11ec-ae88-005056bb5955' -H 'accept: application/hal+json' -d "{ \"enabled\": true }"
+      ```
+      ---
+      ### Deleting a specific keystore configuration
+      The following example shows how to delete a specific keystore configuration. Only an inactive configuration can be deleted.
+      ```
+      # The API:
+      DELETE /api/security/key-stores/{uuid}
+
+      # The call:
+      curl -X DELETE 'https://<mgmt-ip>/api/security/key-stores/33421d82-0a8d-11ec-ae88-005056bb5955' -H 'accept: application/hal+json'
+      ```
+      ---
+
+  get:
+    tags: [ security ]
+    description: |
+      Retrieves keystores.
+
+      ### Related ONTAP commands
+      * `security key-manager show-key-store`
+      * `security key-manager keystore show`
+    operationId: security_keystore_collection_get
+    parameters:
+      - x-ntap-autogen-params: security_keystore
+      - $ref: "#/parameters/fields_param"
+      - $ref: "#/parameters/max_records_param"
+      - $ref: "#/parameters/return_timeout_get_param"
+      - $ref: "#/parameters/return_records_get_param"
+      - $ref: "#/parameters/order_by_param"
+    responses:
+      200:
+        description: OK
+        schema:
+          $ref: "#/definitions/security_keystore_response"
+      default:
+        description: |
+          - x-ntap-error-table-start: vserver_rest_errors.et
+          - name: VSERVER_REST_VSERVER_DOES_NOT_EXIST
+            message: SVM does not exist.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+/security/key-stores/{uuid}:
+  parameters:
+    - name: uuid
+      in: path
+      type: string
+      description: Keystore configuration UUID
+      required: true
+  get:
+    tags: [ security ]
+    description: |
+      Retrieves details of the keystore configuration with the specified UUID.
+
+      ### Related ONTAP commands
+      * `security key-manager keystore show`
+    operationId: security_keystore_get
+    parameters:
+      - $ref: "#/parameters/fields_param"
+    responses:
+      200:
+        description: OK
+        schema:
+          $ref: "#/definitions/security_keystore"
+      default:
+        description: |
+          - x-ntap-error-table-start: keymanager_messages.et
+          - name: KEYMANAGER_MESSAGE_MISSING_KEYMANAGER_CONFIG_INTERNAL_ERROR
+            message: Internal error. The keymanager_config table is missing.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+  patch:
+    tags: [ security ]
+    description: |
+      Enables a keystore configuration
+
+      ### Related ONTAP commands
+      * `security key-manager keystore enable`
+      * `security key-manager keystore disable`
+
+    operationId: security_keystore_modify
+    parameters:
+      - name: info
+        in: body
+        description: Keystore information
+        schema:
+          $ref: "#/definitions/security_keystore"
+    responses:
+      202:
+        description: Accepted
+        schema:
+          $ref: "#/definitions/job_link_response"
+      default:
+        description: |
+          - x-ntap-error-table-start: smf_errors.et,keymanager_messages.et
+          - name: SMF_LOW_ECV
+            message: This operation requires an effective cluster version of 9.14.0 or later.
+          - name: KEYMANAGER_MESSAGE_KEYSTORE_CONFIG_INVALID_REST
+            message: The specified keystore configuration UUID either does not exist or corresponds to a keystore configuration that is not supported by this operation.
+          - name: KEYMANAGER_MESSAGE_KEYSTORE_MISSING_ENABLED_REST
+            message: A value for enabled is required.
+          - name: KEYMANAGER_MESSAGE_KEYSTORE_DISABLE_UNSUPPORTED_REST
+            message: Disabling an enabled configuration through this method is currently not supported.
+          - name: KEYMANAGER_MESSAGE_KEYSTORE_ENABLE_UNSUPPORTED_SOURCE_TYPE
+            message: The SVM associated with the supplied keystore UUID already has a keystore configuration enabled. This command does not support migrating from configurations of that keystore type".
+          - name: KEYMANAGER_MESSAGE_CLOUD_SERVICE_UNREACHABLE_WITH_REASON
+            message: Failed to establish connectivity with the cloud key management service.
+          - name: KEYMANAGER_MESSAGE_KEYSTORE_CONFIG_SWITCH_UNSUPPORTED_SOURCE_CONFIG_STATE
+            message: Cannot switch the enabled keystore configuration when it is not in the 'active' or 'switching' state.
+          - name: KEYMANAGER_MESSAGE_EKM_ENABLE_CSERVER_BUT_INACTIVE_ALREADY_CREATED_REST
+            message: Cannot enable an external key manager on the admin SVM because an inactive external key manager already exists on the admin SVM.
+          - name: KEYMANAGER_MESSAGE_KEYSTORE_ENABLE_CSERVER_DISABLED_FEATURE
+            message: An effective cluster version of ONTAP 9.16.1 or later is required to enable an inactive key manager on the admin SVM.
+          - name: KEYMANAGER_MESSAGE_KEYSTORE_ENABLE_CSERVER_UNSUPPORTED_TARGET_TYPE
+            message: This command does not support enabling key manager configurations with the specified keystore type on the admin SVM.
+          - name: KEYMANAGER_MESSAGE_KEYSTORE_ENABLE_CSERVER_INVALID_ENABLED_KEYSTORE_TYPE
+            message: Cannot switch keystore types on the admin SVM. The keystore type for the invalid configuration must be OKM and the enabled configuration must be KMIP, or vice versa.
+          - name: KEYMANAGER_MESSAGE_KEYSTORE_ENABLE_CSERVER_CANNOT_FIND_ENABLED_CONFIG_INTERNAL_ERROR
+            message: Internal error. Cannot find the enabled configuration.
+          - name: KEYMANAGER_MESSAGE_OKM_ENABLE_BUT_INACTIVE_ALREADY_CREATED
+            message: Cannot enable the Onboard Key Manager on the admin SVM because an inactive Onboard Key Manager already exists on the admin SVM.
+          - name: KEYMANAGER_MESSAGE_ERR_SYSTEM_ROOT_VOL_PRESENT
+            message: Cannot switch admin SVM Key Manager when system root volumes are present.
+          - name: KEYMANAGER_MESSAGE_ERR_CANNOT_SWITCH_WITH_POLICY_REST
+            message: Cannot switch to the Onboard Key Manager when the external key manager has a policy associated with it
+          - name: KEYMANAGER_MESSAGE_ERR_MORE_THAN_TWO_AKS_REST
+            message: Cannot switch to the Onboard Key Manager if there are more than two NSE-AKs in the cluster.
+          - name: KEYMANAGER_MESSAGE_ERR_NO_TWO_AKS_REST
+            message: Cannot switch to the Onboard Key Manager if there are fewer than two NSE-AKs in the cluster.
+          - name: KEYMANAGER_MESSAGE_KMIP_NAE_VOLUMES_FOUND_REST
+            message: The key manager cannot be configured because the SVM has NAE volumes.
+          - name: KEYMANAGER_MESSAGE_KEYSTORE_ENABLE_UNSUPPORTED_TARGET_TYPE
+            message: This command does not support enabling key manager configurations with the specified keystore type.
+          - name: KEYMANAGER_MESSAGE_KEYSTORE_CONFIG_DOES_NOT_EXIST
+            message: The specified keystore configuration does not exist.
+          - name: KEYMANAGER_MESSAGE_KEYSTORE_SWITCH_MISMATCH_TYPE
+            message: Switching between configurations of different keystore types is not supported for data SVMs.
+          - name: KEYMANAGER_MESSAGE_KEYSTORE_CONFIG_ALREADY_ENABLED
+            message: The specified keystore configuration is already enabled.
+          - name: KEYMANAGER_MESSAGE_ERR_NODE_OOQ_REST
+            message: Cannot perform enable/switch while nodes are out of quorum.
+          - name: KEYMANAGER_MESSAGE_ERR_CANNOT_MIGRATE_WITH_POLICY
+            message: Cannot migrate to a cloud key manager when the external key manager has a policy associated with it.
+          - name: KEYMANAGER_MESSAGE_ERR_CANNOT_MIGRATE_WITHOUT_MIXED_STATE
+            message: Cannot migrate to a cloud key manager when the key manager is not in a mixed state.
+          - name: KEYMANAGER_MESSAGE_KEYSERVER_UNAVAILABLE_REST
+            message: One or more key servers are unavailable.
+          - name: KEYMANAGER_MESSAGE_ERR_RESTORE_SVMKEK_FAILED_SUMMARY
+            message: Failed to restore the SVM-KEK.
+          - name: KEYMANAGER_MESSAGE_ERR_VOL_KEY_ID_MISSING
+            message: Internal error. Volume encryption key is missing.
+          - name: KEYMANAGER_MESSAGE_ERR_VOL_UUID_MISSING
+            message: Internal error. UUID is missing for the volume.
+          - name: KEYMANAGER_MESSAGE_ERR_VOL_DSID_MISSING
+            message: Internal error. Volume DSID is missing for the volume.
+          - name: KEYMANAGER_MESSAGE_ERR_VOL_KEY_ID_INVALID
+            message: Internal error. Volume encryption key is invalid for the volume.
+          - name: KEYMANAGER_MESSAGE_ERR_VOL_KEY_BLOB_FAILED
+            message: Internal error. Failed to find the existing wrapped key blob for the volume.
+          - name: KEYMANAGER_MESSAGE_ERR_VOL_VDEK_BLOB_INVALID
+            message: Internal error. The volume has an invalid encryption blob.
+          - name: KEYMANAGER_MESSAGE_ERR_KEY_ID_MISSING
+            message: Failed to find unwrapped key on any nodes.
+          - name: KEYMANAGER_MESSAGE_ERR_GEN_VDEK_BLOB
+            message: Internal error. Failed to generate VDEK blob.
+          - name: KEYMANAGER_MESSAGE_ERR_VOL_UPDATE_BLOB
+            message: Internal error. Failed to update the VDEK blob.
+          - name: KEYMANAGER_MESSAGE_ERR_TO_SVMKEK_CLEANUP_KMIP_KEYTABLE
+            message: Failed to clean up the keys stored on the external key servers.
+          - name: KEYMANAGER_MESSAGE_ERR_SVMKEK_NOT_FOUND
+            message: SVM-KEK not created for the SVM.
+          - name: KEYMANAGER_MESSAGE_ERR_GET_UNWRAPPED_SVMKEK
+            message: Internal error. Failed to unwrap SVM key encryption key.
+          - name: KEYMANAGER_MESSAGE_CUSTODIAN_ENCRYPT_FAILED
+            message: Failed to encrypt.
+          - name: KEYMANAGER_MESSAGE_CUSTODIAN_MISSING_KVSTORE
+            message: The key custodian was not provided with an external key value store.
+          - name: KEYMANAGER_MESSAGE_FAILED_TO_PARSE_VALUE
+            message: Internal error. Failed to parse key value store response.
+          - name: KEYMANAGER_MESSAGE_ERR_KEYGEN_SVM_PERSIST
+            message: Internal error. Failed to store SVM key.
+          - name: KEYMANAGER_MESSAGE_ERR_NO_VOLUMES_TO_MIGRATE
+            message: The key manager configured does not have any volumes to migrate.
+          - name: KEYMANAGER_MESSAGE_ERR_GEN_AES_BLOB
+            message: Internal error. Failed to generate AES blob.
+          - name: KEYMANAGER_MESSAGE_NO_KEYSERVER_FOUND
+            message: No external key management server configured for SVM.
+          - name: KEYMANAGER_MESSAGE_ERR_KEYDEL_KEYID
+            message: Internal error. Failed to delete key from cryptomod.
+          - name: KEYMANAGER_MESSAGE_ERR_CANNOT_MIGRATE_WITHOUT_MIXED_OR_ACTIVE_STATE
+            message: Cannot migrate SVM volumes to the Onboard Key Manager when the key manager is not in the mixed or active state.
+          - name: KEYMANAGER_MESSAGE_ERR_SVMKEK_NOT_RESTORED
+            message: SVM-KEK not restored for SVM.
+          - name: KEYMANAGER_MESSAGE_ERR_CKEK_NOT_RESTORED
+            message: CKEK not restored for SVM.
+          - name: KEYMANAGER_MESSAGE_ERR_KEYGEN_SVM_CKDB_EMPTY
+            message: Internal error. Failed to generate SVM key. Cluster key database is not initialized.
+          - name: KEYMANAGER_MESSAGE_ERR_KEYGEN_SVM_CKEK_NOT_FOUND
+            message: Internal error. Failed to generate SVM key. Cluster key encryption key is not found.
+          - name: KEYMANAGER_MESSAGE_ERR_GEN_WRAPPED_SVMKEK
+            message: Internal error. Failed to rewrap SVM key encryption key.
+          - name: KEYMANAGER_MESSAGE_ERR_KEYDEL_VOL_KEYID
+            message: Internal error. Failed to delete SVM volume key.
+          - name: KEYMANAGER_MESSAGE_SVM_KEK_SWITCH_FAIL_RESTORE_FAIL
+            message: During the keystore switch operation, a restore operation failed.
+          - name: KEYMANAGER_MESSAGE_SVM_KEK_TO_EKM_MIGRATE_FAIL_RESTORE_FAIL
+            message: During the key migration operation, a restore operation failed.
+          - name: KEYMANAGER_MESSAGE_SVM_KEK_TO_OKM_MIGRATE_FAIL_RESTORE_FAIL
+            message: During the key migration operation, a restore operation failed.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
+
+  delete:
+    tags: [ security ]
+    description: |
+      Deletes an inactive keystore configuration.
+
+      ### Related ONTAP commands
+      * `security key-manager keystore delete`
+    operationId: security_keystore_delete
+    responses:
+      200:
+        description: OK
+      default:
+        description: |
+          - x-ntap-error-table-start: smf_errors.et,keymanager_messages.et
+          - name: SMF_LOW_ECV
+            message: This operation requires an effective cluster version of 9.14.0 or later.
+          - name: KEYMANAGER_MESSAGE_KEYSTORE_CONFIG_INVALID_REST
+            message: The specified keystore configuration UUID either does not exist or corresponds to a keystore configuration that is not supported by this operation.
+          - name: KEYMANAGER_MESSAGE_CANNOT_DELETE_ENABLED_CONFIG
+            message: The keystore configuration is currently enabled and cannot be deleted.
+          - name: KEYMANAGER_MESSAGE_KEYSTORE_API_NOT_SUPPORTED
+            message: The method is not yet supported for deleting the given UUID's type of configuration.
+          - name: KEYMANAGER_MESSAGE_KEYSTORE_DELETE_CSERVER_DISABLED_FEATURE
+            message: An effective cluster version of ONTAP 9.16.1 or later is required to delete an inactive key manager on the admin SVM.
+          - name: KEYMANAGER_MESSAGE_KEYSTORE_DELETE_CSERVER_UNSUPPORTED_TARGET_TYPE
+            message: This command does not support disabling key manager configurations with the specified keystore type on the admin SVM.
+          - name: KEYMANAGER_MESSAGE_DELETE_INACTIVE_KEYSTORE_CONFIG_WHILE_SWITCHING_REST
+            message: Cannot delete an inactive key manager configuration while the keystore is in the switching state.
+          - x-ntap-error-table-end: END
+        schema:
+          $ref: "#/definitions/error_response"
