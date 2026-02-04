@@ -1,0 +1,81 @@
+security_keystore:
+  type: object
+  properties:
+    scope:
+      $ref: '#/definitions/network_scope_readonly'
+    uuid:
+      type: string
+      readOnly: true
+    configuration:
+      readOnly: true
+      $ref: "#/INLINE_REF/definitions/security_keystore_configuration"
+    enabled:
+      type: boolean
+      x-ntap-readModify: true
+      description: Indicates whether the configuration is enabled.
+    location:
+      readOnly: true
+      type: string
+      enum: [onboard, external]
+      description: >
+          Indicates whether the keystore is onboard or external.
+          * 'onboard' - Onboard Key Database
+          * 'external' - External Key Database, including KMIP and Cloud Key Management Systems
+    type:
+      readOnly: true
+      type: string
+      enum: [okm, kmip, akv, gcp, aws, ikp, barbican]
+      description: >
+          Type of keystore that is configured:
+          * 'okm' - Onboard Key Manager
+          * 'kmip' - External Key Manager
+          * 'akv' - Azure Key Vault Key Management Service
+          * 'gcp' - Google Cloud Platform Key Management Service
+          * 'aws' - Amazon Web Service Key Management Service
+          * 'ikp' - IBM Key Protect Key Management Service
+          * 'barbican' - Barbican Key Management Service
+    state:
+      readOnly: true
+      type: string
+      enum: [active, mixed, svm_kek_rekey, blocked, switching, initializing, disabling]
+      description: >
+          State of the keystore:
+          * 'active' - The key manager is active and serving new and existing keys.
+          * 'mixed' - The key manager has a mixed configuration. New keys can't be created.
+          * 'svm_kek_rekey' - An SVM key encryption key (KEK) rekey is in progress. New keys can't be created.
+          * 'blocked' - The key manager is blocked and cannot serve new and existing keys.
+          * 'switching' - Switching the enabled key manager keystore configuration. Some operations are blocked.
+          * 'initializing' - The key manager is being initialized. All operations are blocked.
+          * 'disabling' - The key manager is being disabled. All operations are blocked.
+    svm:
+      readOnly: true
+      $ref: "#/INLINE_REF/definitions/svm_reference"
+
+security_keystore_response:
+  type: object
+  properties:
+    records:
+      type: array
+      items:
+        $ref: "#/definitions/security_keystore"
+    num_records:
+      type: integer
+      description: Number of records.
+      example: 1
+    _links:
+      $ref: "#/INLINE_REF/definitions/collection_links"
+
+security_keystore_configuration:
+  type: object
+  description: Security keystore object reference.
+  properties:
+    name:
+      type: string
+      description: Name of the configuration.
+      example: "default"
+    uuid:
+      type: string
+      description: Keystore UUID.
+      example: "1cd8a442-86d1-11e0-ae1c-123478563434"
+    _links:
+      $ref: '#/INLINE_REF/definitions/self_link'

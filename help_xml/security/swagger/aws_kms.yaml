@@ -1,0 +1,207 @@
+aws_kms_key:
+  type: object
+  properties:
+    key_id:
+      type: string
+      x-ntap-readCreate: true
+      description: Key identifier of the AWS KMS key encryption key.
+      example: "key01"
+
+aws_kms_state:
+  description: |
+     Indicates whether or not the Amazon Web Services Key Management Service (AWS KMS) key protection is available cluster-wide.
+  type: object
+  x-ntap-readOnly: true
+  properties:
+    cluster_state:
+      type: boolean
+      description: Set to true when AWS KMS key protection is available on all nodes of the cluster.
+    message:
+      type: string
+      description: Error message set when cluster_state is false.
+      example: "AWS KMS key protection is unavailable on the following nodes: node1, node2."
+    code:
+      type: string
+      description: Code corresponding to the message. Returns a 0 if AWS KMS key protection is available on all nodes of the cluster.
+      example: "346758"
+
+aws_connectivity:
+  description: |
+     Indicates whether or not the Amazon KMS is reachable from all nodes in the cluster.
+     This is an advanced property; there is an added computational cost to retrieving its value. The property is not populated for either a collection GET or an instance GET unless it is explicitly requested using the `fields` query parameter or GET for all advanced properties is enabled.
+  type: object
+  x-ntap-readOnly: true
+  properties:
+    reachable:
+      type: boolean
+      description: Set to true if the Amazon KMS is reachable from all nodes of the cluster.
+    message:
+      type: string
+      description: Error message returned when 'reachable' is false.
+      example: "Amazon KMS is not reachable from all nodes - <reason>."
+    code:
+      type: string
+      description: Code corresponding to the error message. Returns a 0 if Amazon KMS is reachable from all nodes in the cluster.
+      example: "346758"
+
+ekmip_server_connectivity:
+  description: |
+     Provides the connectivity status for the given SVM on the given node to all EKMIP servers configured on all nodes of the cluster.
+     This is an advanced property; there is an added computational cost to retrieving its value. The property is not populated for either a collection GET or an instance GET unless it is explicitly requested using the `fields` query parameter or GET for all advanced properties is enabled.
+  type: object
+  x-ntap-readOnly: true
+  properties:
+    node:
+      $ref: "#/INLINE_REF/definitions/node_reference"
+    reachable:
+      type: boolean
+      description: Set to true if the given SVM on the given node is able to communicate to all EKMIP servers configured on all nodes in the cluster.
+    message:
+      type: string
+      description: Error message returned when cluster-wide EKMIP server availability from the given SVM and node is false.
+      example: "embedded KMIP server status unavailable on node."
+    code:
+      type: string
+      description: Code corresponding to the error message. Returns a 0 if a given SVM is able to communicate to the EKMIP servers of all of the nodes in the cluster.
+      example: "346758"
+
+aws_kms:
+  type: object
+  properties:
+    uuid:
+      type: string
+      readOnly: true
+      description: A unique identifier for the AWS KMS.
+      example: 1cd8a442-86d1-11e0-ae1c-123478563412
+    scope:
+      readOnly: true
+      $ref: '#/INLINE_REF/definitions/network_scope'
+    svm:
+      x-ntap-readCreate: true
+      $ref: "#/INLINE_REF/definitions/svm_reference"
+    region:
+      type: string
+      description: AWS region of the AWS KMS.
+      example: "us-east-1"
+    key_id:
+      type: string
+      x-ntap-readCreate: true
+      description: AWS Key ID.
+      example: "kmip-aws"
+    access_key_id:
+      type: string
+      description: AWS Access Key ID of the user that has appropriate access to AWS KMS.
+      # cSpell:disable-next-line
+      example: <AWS-ACCESS-KEY-ID>
+    secret_access_key:
+      type: string
+      x-ntap-writeOnly: true
+      description: AWS Secret Access Key for the provided access key ID.
+      format: password
+      example: <AWS-SECRET-ACCESS-KEY>
+    service:
+      type: string
+      description: AWS service type.
+      example: "dynamodb.*.amazonaws.com"
+    default_domain:
+      type: string
+      description: AWS KMS default domain.
+      example: "domainName"
+    port:
+      type: integer
+      description: AWS KMS port.
+      example: 443
+    proxy_type:
+      type: string
+      description: Proxy type.
+      enum:
+        - http
+        - https
+      example: http
+    proxy_host:
+      type: string
+      description: Proxy host.
+      example: "proxy.eng.com"
+    proxy_port:
+      type: integer
+      description: Proxy port.
+      example: 1234
+    proxy_username:
+      type: string
+      description: Proxy username.
+      # cSpell:disable-next-line
+      example: "proxyuser"
+    proxy_password:
+      type: string
+      x-ntap-writeOnly: true
+      description: Proxy password. Password is not audited.
+      # cSpell:disable-next-line
+      example: "awskze-Jwjje2-WJJPer"
+    state:
+      readOnly: true
+      $ref: "#/INLINE_REF/definitions/aws_kms_state"
+    _links:
+      readOnly: true
+      $ref: "#/INLINE_REF/definitions/self_link"
+    polling_period:
+      type: integer
+      description: Polling period in minutes.
+      example: 55
+    timeout:
+      type: integer
+      x-ntap-readModify: true
+      description: AWS Connection timeout, in seconds.
+      example: 20
+    verify:
+      type: boolean
+      x-ntap-readModify: true
+      description: Set to true to verify the AWS KMS host.
+      example: false
+    verify_host:
+      type: boolean
+      x-ntap-readModify: true
+      description: Set to true to verify the AWS KMS host's hostname.
+      example: true
+    verify_ip:
+      type: boolean
+      x-ntap-readModify: true
+      description: Set to true to verify the AWS KMS host's IP address.
+      example: false
+    host:
+      type: string
+      description: AWS KMS host's hostname.
+      example: "aws-host.host.com"
+    amazon_reachability:
+      readOnly: true
+      $ref: "#/INLINE_REF/definitions/aws_connectivity"
+    ekmip_reachability:
+      type: array
+      readOnly: true
+      items:
+        $ref: "#/INLINE_REF/definitions/ekmip_server_connectivity"
+    skip_verify:
+      type: boolean
+      x-ntap-readModify: true
+      description: |
+        Set to true to bypass verification of the user provided access_key_id
+        and secret_access_key. An error will be returned if 'skip_verify' is
+        provided but 'access_key_id' is not.
+      example: false
+    encryption_context:
+      type: string
+      description: Additional layer of authentication and logging.
+      example: "aws:fsx:fs-id=fs-0785c8beceb895999"
+
+aws_kms_response:
+  type: object
+  properties:
+    records:
+      type: array
+      items:
+        $ref: "#/definitions/aws_kms"
+    num_records:
+      type: integer
+      description: Number of records
+      example: 1
+    _links:
+      $ref: "#/INLINE_REF/definitions/collection_links"

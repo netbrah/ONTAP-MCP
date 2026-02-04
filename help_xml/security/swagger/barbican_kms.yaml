@@ -1,0 +1,147 @@
+barbican_connectivity:
+  description: |
+     Indicates whether the Barbican KMS is reachable from all nodes in the cluster.
+     This is an advanced property; there is an added computational cost to retrieving its value. The property is not populated for either a collection GET request or an instance GET request unless it is explicitly requested using the field's query parameter or GET for all advanced properties is enabled.
+  type: object
+  x-ntap-readOnly: true
+  properties:
+    reachable:
+      type: boolean
+      description: Set to true if the Barbican KMS is reachable from all nodes of the cluster.
+      example: false
+    message:
+      type: string
+      description: Set to the appropriate error message when 'reachable' is false.
+      example: "Barbican KMS is not reachable from all nodes - <reason>."
+    code:
+      type: string
+      description: Code corresponding to the error message. Returns 0 if Barbican KMS is reachable from all nodes in the cluster.
+      example: "346758"
+
+barbican_state:
+  description: |
+     Indicates whether or not the SVM key encryption key (KEK) is available cluster wide.
+     This is an advanced property; there is an added computational cost to retrieving its value. The property is not populated for either a collection GET or an instance GET unless it is explicitly requested using the `fields` query parameter or GET for all advanced properties is enabled.
+  type: object
+  x-ntap-readOnly: true
+  properties:
+    cluster_state:
+      type: boolean
+      description: Set to true when an SVM-KEK is present on all nodes of the cluster.
+      example: false
+    message:
+      type: string
+      description: Error message returned when there's no SVM-KEK availability on the cluster.
+      example: "Top-level internal key encryption key is unavailable on the following nodes with the associated reasons: Node: node1. Reason: No volumes created yet for the SVM. Wrapped KEK status will be available after creating encrypted volumes."
+    code:
+      type: string
+      description: Code corresponding to the status message. Returns a 0 if the SVM-KEK is available on all nodes in the cluster.
+      example: "346758"
+
+barbican:
+  type: object
+  properties:
+    uuid:
+      type: string
+      format: uuid
+      readOnly: true
+      description: A unique identifier of the Barbican KMS.
+      example: 1cd8a442-86d1-11e0-ae1c-123478563434
+    scope:
+      readOnly: true
+      $ref: '#/INLINE_REF/definitions/network_scope'
+    svm:
+      x-ntap-readCreate: true
+      $ref: "#/INLINE_REF/definitions/svm_reference"
+    configuration:
+      x-ntap-readCreate: true
+      $ref: "#/INLINE_REF/definitions/security_keystore_configuration"
+    enabled:
+      type: boolean
+      readOnly: true
+      description: Indicates whether the configuration is enabled.
+    key_id:
+      type: string
+      format: uri
+      x-ntap-readCreate: true
+      description: Key Identifier URL of the Barbican KMS key encryption key. Must be an HTTPS URL.
+      example: "https://172.29.58.184:9311/v1/secrets/5c610a4f-ea97-44b5-8682-f4daeafa9647"
+    keystone_url:
+      type: string
+      format: uri
+      x-ntap-readCreate: true
+      description: Keystone URL for the access token. Must be an HTTPS URL.
+      example: https://keystoneip:5000/v3/auth/tokens
+    application_cred_id:
+      type: string
+      description: Keystone application credentials ID required to access the specified Barbican KMS.
+      format: string
+      example: "63e3cb77f84f42b7a0395a3efb7636f9"
+    application_cred_secret:
+      x-ntap-writeOnly: true
+      type: string
+      description: Keystone application credentials secret required to access the specified Barbican KMS. It is not audited.
+      format: password
+      example: "secret"
+    verify:
+      type: boolean
+      description: "Verify the identity of the Barbican KMS."
+      default: true
+    verify_host:
+      type: boolean
+      description: "Verify the identity of the Barbican KMS host name."
+      default: true
+    proxy_type:
+      type: string
+      description: Type of proxy.
+      enum:
+        - http
+        - https
+      example: http
+    proxy_host:
+      type: string
+      description: Proxy host name.
+      example: "proxy.eng.com"
+    proxy_port:
+      type: integer
+      description: Proxy port number.
+      example: 1234
+    proxy_username:
+      type: string
+      description: Proxy username.
+      # cSpell:disable-next-line
+      example: "proxyuser"
+    proxy_password:
+      type: string
+      x-ntap-writeOnly: true
+      format: password
+      description: Proxy password. Password is not audited.
+      # cSpell:disable-next-line
+      example: "proxypassword"
+    timeout:
+      type: integer
+      description: Connection timeout in seconds.
+      example: 60
+    _links:
+      readOnly: true
+      $ref: "#/INLINE_REF/definitions/self_link"
+    barbican_reachability:
+      readOnly: true
+      $ref: "#/INLINE_REF/definitions/barbican_connectivity"
+    state:
+      readOnly: true
+      $ref: "#/INLINE_REF/definitions/barbican_state"
+
+barbican_response:
+  type: object
+  properties:
+    records:
+      type: array
+      items:
+        $ref: "#/definitions/barbican"
+    num_records:
+      type: integer
+      description: Number of records
+      example: 1
+    _links:
+      $ref: "#/INLINE_REF/definitions/collection_links"

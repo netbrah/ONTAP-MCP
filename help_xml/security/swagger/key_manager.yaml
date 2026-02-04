@@ -1,0 +1,710 @@
+
+volume_encryption_support:
+  description: |
+     Indicates whether volume encryption is supported in the cluster.
+  type: object
+  x-ntap-readOnly: true
+  properties:
+    supported:
+      type: boolean
+      description: Set to true when volume encryption support is available on all nodes of the cluster.
+    message:
+      type: string
+      description: Reason for not supporting volume encryption.
+      example: No platform support for volume encryption in following nodes - node1, node2.
+    code:
+      type: integer
+      description: Code corresponding to the status message. Returns a 0 if volume encryption is supported in all nodes of the cluster.
+      example: 346758
+
+key_server_state:
+  description: |
+     The connectivity state of the key server for a specific node.
+  type: object
+  x-ntap-readOnly: true
+  properties:
+    node:
+      $ref: "#/INLINE_REF/definitions/node_reference"
+    state:
+      type: string
+      description: Key server connectivity state
+      example: not_responding
+      enum:
+        - available
+        - not_responding
+        - unknown
+
+key_server_state_array:
+  description: |
+    A container for holding an array of the key server connectivity state for each node.
+  type: object
+  x-ntap-readOnly: true
+  properties:
+    cluster_availability:
+      type: boolean
+      readOnly: true
+      description: Set to true when key server connectivity state is available on all nodes of the cluster.
+    node_states:
+      description: |
+        An array of key server connectivity states for each node.
+      type: array
+      readOnly: true
+      items:
+        $ref: "#/definitions/key_server_state"
+
+key_server:
+  type: object
+  properties:
+    server:
+      type: string
+      x-ntap-readCreate: true
+      description: External key server for key management. If no port is provided, a default port of 5696 is used. Not valid in POST if `records` is provided.
+      example: "keyserver1.com:5698"
+    port:
+      type: integer
+      x-ntap-modifyOnly: true
+      description: TCP port number for the key server.
+      minimum: 1
+      maximum: 65535
+      example: 5698
+    records:
+      type: array
+      x-ntap-createOnly: true
+      description: |
+        An array of key servers specified to add multiple key servers to a key manager in a single API call. Valid in POST only and not valid if `server` is provided.
+      maxItems: 4
+      items:
+        $ref: "#/INLINE_REF/definitions/key_server_no_records"
+    timeout:
+      type: integer
+      x-ntap-readModify: true
+      description: |
+        I/O timeout in seconds for communicating with the key server.
+        -1 indicates that the server will wait indefinitely for the event to occur. 0 indicates that the server will not wait and will immediately timeout if it does not receive a response.
+      minimum: -1
+      maximum: 60
+      default: 25
+      example: 60
+    username:
+      type: string
+      x-ntap-readModify: true
+      description: KMIP username credentials for connecting with the key server.
+      default: ""
+      example: "username"
+    password:
+      type: string
+      x-ntap-modifyOnly: true
+      description: Password credentials for connecting with the key server. This is not audited.
+      default: ""
+      format: password
+      example: "password"
+    secondary_key_servers:
+      type: array
+      x-ntap-readModify: true
+      description: A list of the secondary key servers associated with the primary key server.
+      example: [ "secondary1.com", "10.1.2.3" ]
+      items:
+        type: string
+    create_remove_timeout:
+      type: integer
+      x-ntap-readModify: true
+      description: |
+        The key server timeout for create and remove operations.
+        -1 indicates that the server will wait indefinitely for the event to occur. 0 indicates that the server will not wait and will immediately timeout if it does not receive a response.
+      minimum: -1
+      maximum: 60
+      default: 10
+      example: 60
+    connectivity:
+      readOnly: true
+      description: |
+        This property contains the key server connectivity state of all nodes in the cluster.
+        This is an advanced property; there is an added computational cost to retrieving its value. The property is not populated for either a collection GET or an instance GET unless it is explicitly requested using the `fields` query parameter or GET for all advanced properties is enabled.
+      $ref: "#/INLINE_REF/definitions/key_server_state_array"
+    _links:
+      $ref: "#/INLINE_REF/definitions/self_link"
+
+key_server_no_records:
+  type: object
+  properties:
+    server:
+      type: string
+      x-ntap-readCreate: true
+      description: External key server for key management. If no port is provided, a default port of 5696 is used. Not valid in POST if `records` is provided.
+      example: "bulkkeyserver.com:5698"
+    port:
+      type: integer
+      x-ntap-modifyOnly: true
+      description: TCP port number for the key server.
+      minimum: 1
+      maximum: 65535
+      example: 5698
+    timeout:
+      type: integer
+      x-ntap-readModify: true
+      description: I/O timeout in seconds for communicating with the key server.
+      minimum: 1
+      maximum: 60
+      default: 25
+      example: 60
+    username:
+      type: string
+      x-ntap-readModify: true
+      description: KMIP username credentials for connecting with the key server.
+      default: ""
+      example: "username"
+    password:
+      type: string
+      x-ntap-modifyOnly: true
+      description: Password credentials for connecting with the key server. This is not audited.
+      default: ""
+      format: password
+      example: "password"
+    connectivity:
+      readOnly: true
+      description: |
+        This property contains the key server connectivity state of all nodes in the cluster.
+        This is an advanced property; there is an added computational cost to retrieving its value. The property is not populated for either a collection GET or an instance GET unless it is explicitly requested using the `fields` query parameter or GET for all advanced properties is enabled.
+      $ref: "#/INLINE_REF/definitions/key_server_state_array"
+    _links:
+      $ref: "#/INLINE_REF/definitions/self_link"
+
+key_server_readcreate:
+  type: object
+  properties:
+    server:
+      type: string
+      x-ntap-readCreate: true
+      description: External key server for key management. If no port is provided, a default port of 5696 is used.
+      example: "keyserver1.com:5698"
+    timeout:
+      type: integer
+      readOnly: true
+      description: I/O timeout in seconds for communicating with the key server.
+      minimum: 1
+      maximum: 60
+      default: 25
+      example: 60
+    username:
+      type: string
+      readOnly: true
+      description: Username credentials for connecting with the key server.
+      default: ""
+      example: "admin"
+    secondary_key_servers:
+      type: string
+      readOnly: true
+      description: A comma delimited string of the secondary key servers associated with the primary key server.
+      example: "secondary1.com, 10.2.3.4"
+    connectivity:
+      readOnly: true
+      description: |
+        This property contains the key server connectivity state of all nodes in the cluster.
+        This is an advanced property; there is an added computational cost to retrieving its value. The property is not populated for either a collection GET or an instance GET unless it is explicitly requested using the `fields` query parameter or GET for all advanced properties is enabled.
+      $ref: "#/INLINE_REF/definitions/key_server_state_array"
+    _links:
+      $ref: "#/definitions/self_link"
+
+key_server_response:
+  type: object
+  properties:
+    records:
+      type: array
+      items:
+        $ref: "#/definitions/key_server"
+    num_records:
+      type: integer
+      description: Number of records
+      example: 1
+    _links:
+      $ref: "#/INLINE_REF/definitions/collection_links"
+
+key_manager_state:
+  description: |
+     Optional status information on the current state of the key manager indicating if it is fully setup or requires more action.
+  type: object
+  x-ntap-readOnly: true
+  properties:
+    message:
+      type: string
+      description: Current state of the key manager indicating any additional steps to perform to finish the setup.
+        This is an advanced property; there is an added computational cost to retrieving its value. The property is not populated for either a collection GET or an instance GET unless it is explicitly requested using the `fields` query parameter or GET for all advanced properties is enabled.
+      example: This cluster is part of a MetroCluster configuration. Use the REST API POST method security/key_managers/ with the synchronize option and the same passphrase on the partner cluster before proceeding with any key manager operations.  Failure to do so could lead to switchover or switchback failure.
+    code:
+      type: integer
+      description: Code corresponding to the status message. Returns 0 if the setup is complete.
+        This is an advanced property; there is an added computational cost to retrieving its value. The property is not populated for either a collection GET or an instance GET unless it is explicitly requested using the `fields` query parameter or GET for all advanced properties is enabled.
+      example: 346758
+
+key_manager_config:
+  description: |
+    Manages the various key manager configuration options.
+  type: object
+  x-ntap-readModify: true
+  properties:
+    cc_mode_enabled:
+      type: boolean
+      description: Indicates whether the Common Criteria Mode configuration is enabled.
+    passphrase:
+      type: string
+      x-ntap-modifyOnly: true
+      description: Current cluster-wide passphrase. This is a required field when setting the cc_mode_enabled field value to true. This is not audited.
+      example: The cluster passphrase of length 64-256 ASCII characters.
+      format: password
+    health_monitor_polling_interval:
+      type: integer
+      description: Health Monitor Polling Period, in minutes. Supported value range of 15-30 minutes.
+      example: 20
+    cloud_kms_retry_count:
+      type: integer
+      description: Cloud key manager connection retry count. Supported value range of 0-10.
+      example: 3
+    health_monitor_policy:
+      type: object
+      description: Manages the keystore configurations.
+      properties:
+        okm:
+          type: object
+          description: Onboard Key Manager policy options
+          $ref: "#/INLINE_REF/definitions/health_monitor_policy_fields"
+        kmip:
+          type: object
+          description: External Key Manager policy options
+          $ref: "#/INLINE_REF/definitions/health_monitor_policy_fields"
+        akv:
+          type: object
+          description: Azure Key Vault Key Management Service policy options
+          $ref: "#/INLINE_REF/definitions/health_monitor_policy_fields"
+        gcp:
+          type: object
+          description: Google Cloud Key Management Service policy options
+          $ref: "#/INLINE_REF/definitions/health_monitor_policy_fields"
+        aws:
+          type: object
+          description: Amazon Web Services Key Management Service policy options
+          $ref: "#/INLINE_REF/definitions/health_monitor_policy_fields"
+        ikp:
+          type: object
+          description: IBM Key Protect Key Management Service policy options
+          $ref: "#/INLINE_REF/definitions/health_monitor_policy_fields"
+        barbican:
+          type: object
+          description: Barbican Key Management Service policy options
+          $ref: "#/INLINE_REF/definitions/health_monitor_policy_fields"
+    _links:
+      $ref: "#/definitions/self_link"
+
+security_key_manager:
+  type: object
+  properties:
+    uuid:
+      type: string
+      readOnly: true
+    scope:
+      $ref: "#/definitions/network_scope_readonly"
+    svm:
+      x-ntap-readCreate: true
+      $ref: "#/INLINE_REF/definitions/svm_reference"
+    configuration:
+      x-ntap-readCreate: true
+      $ref: "#/INLINE_REF/definitions/security_keystore_configuration"
+    enabled:
+      type: boolean
+      readOnly: true
+      description: Indicates whether the configuration is enabled.
+    policy:
+      type: string
+      x-ntap-readCreate: true
+      description: Security policy associated with the key manager. This value is currently ignored if specified for the onboard key manager.
+    volume_encryption:
+      $ref: "#/INLINE_REF/definitions/volume_encryption_support"
+    is_default_data_at_rest_encryption_disabled:
+      type: boolean
+      x-ntap-readModify : true
+      description: Indicates whether default data-at-rest encryption is disabled in the cluster. This field is deprecated in ONTAP 9.8 and later. Use the "software_data_encryption.disabled_by_default" of /api/security endpoint.
+      default: false
+    external:
+      type: object
+      description: Configures external key management
+      properties:
+        client_certificate:
+          $ref: "#/INLINE_REF/definitions/security_certificate_reference"
+          description: Client certificate (name and UUID)
+        server_ca_certificates:
+          type: array
+          description: The array of certificates that are common for all the keyservers per SVM.
+          items:
+            $ref: "#/INLINE_REF/definitions/security_certificate_reference"
+        servers:
+          type: array
+          x-ntap-readCreate: true
+          description: The set of external key servers.
+          maxItems: 4
+          items:
+            $ref: "#/definitions/key_server_readcreate"
+    onboard:
+      type: object
+      description: Configures onboard key management. After configuring onboard key management, save the encrypted configuration data in a safe location so that you can use it if you need to perform a manual recovery operation.
+      properties:
+        enabled:
+          type: boolean
+          readOnly: true
+          description: Is the onboard key manager enabled?
+        passphrase:
+          type: string
+          x-ntap-writeOnly: true
+          description: The cluster-wide passphrase. This is not audited.
+          example: The cluster password of length 32-256 ASCII characters.
+          format: password
+        existing_passphrase:
+          type: string
+          x-ntap-modifyOnly: true
+          description: The cluster-wide passphrase. This is not audited.
+          example: The cluster password of length 32-256 ASCII characters.
+          format: password
+        synchronize:
+          type: boolean
+          x-ntap-writeOnly: true
+          description: Synchronizes missing onboard keys on any node in the cluster. If a node is added to a cluster that has onboard key management configured, the synchronize operation needs to be performed in a PATCH operation. In a MetroCluster configuration, if onboard key management is enabled on one site, then the synchronize operation needs to be run as a POST operation on the remote site providing the same passphrase.
+        key_backup:
+          type: string
+          readOnly: true
+          description: Backup of the onboard key manager's key hierarchy. It is required to save this backup after configuring the onboard key manager to help in the recovery of the cluster in case of catastrophic failures.
+          example: >-
+            '--------------------------BEGIN BACKUP--------------------------
+            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
+            ---------------------------END BACKUP---------------------------'
+    status:
+      $ref: "#/INLINE_REF/definitions/key_manager_state"
+    _links:
+      $ref: "#/INLINE_REF/definitions/self_link"
+
+security_key_manager_response:
+  type: object
+  properties:
+    records:
+      type: array
+      items:
+        $ref: "#/definitions/security_key_manager"
+    num_records:
+      type: integer
+      description: Number of records
+      example: 1
+    _links:
+      $ref: "#/INLINE_REF/definitions/collection_links"
+
+security_key_manager_reference:
+  type: object
+  description: Security key manager object reference.
+  properties:
+    uuid:
+      type: string
+      description: Key manager UUID
+      example: 1cd8a442-86d1-11e0-ae1c-123478563434
+    _links:
+      $ref: '#/INLINE_REF/definitions/self_link'
+
+security_key_manager_restore_keys:
+    type: object
+    properties:
+      node:
+        $ref: "#/INLINE_REF/definitions/node_uuid"
+      key_server:
+        type: string
+        description: External key server for key management.
+        example: "keyserver1.com:5698"
+      key_tag:
+        type: string
+        description: Additional information associated with the key.
+        example: "Authentication-Key-01"
+      key_id:
+        type: string
+        description: Key identifier.
+        example: "000000000000000002000000000001003aa8ce6a4fea3e466620134bea9510a10000000000000000"
+      _links:
+          $ref: "#/INLINE_REF/definitions/self_link"
+
+key_manager_keys:
+  description: |
+    Displays the keys stored in a key manager.
+  type: object
+  x-ntap-readOnly: true
+  properties:
+    security_key_manager:
+      $ref: "#/INLINE_REF/definitions/security_key_manager_reference"
+    node:
+        $ref: "#/INLINE_REF/definitions/node_reference"
+        #description: Node UUID. Required on GET.
+    key_id:
+        type: string
+        description: Key identifier.
+        example: "000000000000000002000000000001008963c9213194c59555c1bec8db3603c800000000"
+    key_server:
+        type: string
+        description: External key server for key management.
+        example: "keyserver1.com:5698"
+    scope:
+      $ref: '#/definitions/network_scope_readonly'
+    svm:
+      $ref: '#/INLINE_REF/definitions/svm_reference'
+    key_tag:
+        type: string
+        description: Additional information associated with the key.
+        example: "key#"
+    key_type:
+        type: string
+        description: Encryption Key type.
+        enum:
+          - nse_ak
+          - aek
+          - vek
+          - nek
+          - svm_kek
+          - mroot_ak
+    restored:
+        type: boolean
+        description: Indicates whether the key is present locally on the node.
+        example: true
+    key_store:
+        type: string
+        description: Security key manager configured for the given key manager UUID. Key manager keystore value can be onboard or external.
+        enum:
+          - onboard
+          - external
+    key_user:
+        type: string
+        description: SVM associated with the key.
+        example: "vs1"
+    key_manager:
+        type: string
+        description: Key manager key server managing the key. Indicates the external key server when external key manager is configured.
+        example: "keyserver1.local:5696"
+    key_store_type:
+        type: string
+        description: Security key manager keystore type. Keystore type can be onboard, external, or supported cloud key manager.
+        enum:
+          - okm
+          - kmip
+          - akv
+          - unset
+          - gcp
+          - aws
+          - ikp
+          - barbican
+    crn:
+        type: string
+        description: Cloud resource name.
+        example: "CRN=v1:bluemix:public:containers-kubernetes"
+    policy:
+        type: string
+        description: Key store policy.
+        example: "IBM_Key_Lore"
+    encryption_algorithm:
+        type: string
+        description: "Encryption algorithm for the key"
+        example: "XTS-AES-256"
+    _links:
+        $ref: "#/definitions/self_link"
+
+key_manager_keys_response:
+  type: object
+  properties:
+    records:
+      type: array
+      items:
+        $ref: "#/definitions/key_manager_keys"
+    num_records:
+      type: integer
+      description: Number of records
+      example: 1
+    _links:
+      $ref: "#/INLINE_REF/definitions/collection_links"
+
+key_manager_auth_key:
+  type: object
+  properties:
+    security_key_manager:
+      $ref: "#/INLINE_REF/definitions/security_key_manager_reference"
+    key_tag:
+      type: string
+      description: Optional parameter to define key-tag for the authentication key, length 0-32 characters.
+      default: ""
+      example: "Authentication-Key-01"
+    passphrase:
+      type: string
+      x-ntap-createOnly: true
+      description: Authentication passphrase, length 20-32 characters. May contain the '=' character.
+      example: AuthenticationKey_01
+      format: password
+    key_id:
+      readOnly: true
+      type: string
+      description: Key identifier.
+      example: "000000000000000002000000000001003aa8ce6a4fea3e466620134bea9510a10000000000000000"
+    _links:
+        $ref: "#/definitions/self_link"
+
+key_manager_auth_key_response:
+  type: object
+  properties:
+    records:
+      type: array
+      items:
+        $ref: "#/definitions/key_manager_auth_key"
+    num_records:
+      type: integer
+      description: Number of records
+    _links:
+      $ref: "#/INLINE_REF/definitions/collection_links"
+
+health_monitor_policy_fields:
+  description: Manages the health monitor policy options.
+  type: object
+  properties:
+    enabled:
+      x-ntap-readModify: true
+      type: boolean
+      description: Indicates whether health monitor is enabled.
+    manage_volume_offline:
+      x-ntap-readModify: true
+      type: boolean
+      description: Indicates whether the health monitor manages the volume offline operation.
+
+# ADDED FROM DARK API
+xc_security_key_manager:
+  x-ntap-visibility:
+    type: private
+  type: object
+  properties:
+    uuid:
+      type: string
+      readOnly: true
+    volume_encryption:
+      $ref: "#/INLINE_REF/definitions/volume_encryption_support"
+    policy:
+      type: string
+      description: Security policy associated with the key manager. This value is currently ignored if specified for the onboard key manager.
+    external:
+      type: object
+      description: Configures external key management.
+      properties:
+        client_certificate:
+          $ref: "#/INLINE_REF/definitions/security_certificate_ref_uuid"
+          description: Client certificate
+        server_ca_certificates:
+          type: array
+          description: The UUIDs of the server CA certificates already installed in the cluster or SVM. The array of certificates are common for all the key servers per SVM.
+          items:
+            $ref: "#/INLINE_REF/definitions/security_certificate_ref_uuid"
+        servers:
+          type: array
+          description: The set of external key servers.
+          maxItems: 4
+          items:
+            $ref: "#/definitions/key_server_readcreate"
+    onboard:
+      type: object
+      description: Configures onboard key management. After configuring onboard key management, save the encrypted configuration data in a safe location so that you can use it if you need to perform a manual recovery operation.
+      properties:
+        enabled:
+          type: boolean
+          readOnly: true
+          description: Indicates whether or not the onboard key manager is enabled.
+        passphrase:
+          type: string
+          x-ntap-writeOnly: true
+          description: The cluster-wide passphrase. This is not audited.
+          example: The cluster password of length 32-256 ASCII characters.
+          format: password
+        existing_passphrase:
+          type: string
+          x-ntap-modifyOnly: true
+          description: The cluster-wide passphrase. This is not audited.
+          example: The cluster password of length 32-256 ASCII characters.
+          format: password
+        synchronize:
+          type: boolean
+          x-ntap-writeOnly: true
+          description: Synchronizes missing onboard keys on any node in the cluster. If a node is added to a cluster that has onboard key management configured, the synchronize operation needs to be performed in a PATCH operation. In a MetroCluster configuration, if onboard key management is enabled on one site, then the synchronize operation needs to be run as a POST operation on the remote site providing the same passphrase.
+        key_backup:
+          type: string
+          readOnly: true
+          description: Backup of the onboard key manager's key hierarchy. It is required to save this backup after configuring the onboard key manager to help in the recovery of the cluster in case of catastrophic failures.
+          example: >-
+            '--------------------------BEGIN BACKUP--------------------------
+            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
+            ---------------------------END BACKUP---------------------------'
+    status:
+      $ref: "#/INLINE_REF/definitions/key_manager_state"
+    _links:
+      $ref: "#/INLINE_REF/definitions/self_link"
+
+xc_security_key_manager_response:
+  x-ntap-visibility:
+    type: private
+  type: object
+  properties:
+    records:
+      type: array
+      items:
+        $ref: "#/definitions/xc_security_key_manager"
+    num_records:
+      type: integer
+      description: Number of records
+      example: 1
+    _links:
+      $ref: "#/INLINE_REF/definitions/collection_links"

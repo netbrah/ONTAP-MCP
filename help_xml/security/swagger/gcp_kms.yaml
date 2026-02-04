@@ -1,0 +1,224 @@
+gcp_kms_key:
+  type: object
+  properties:
+    key_name:
+      type: string
+      x-ntap-readCreate: true
+      description: Google Cloud KMS key name.
+      example: "cryptokey1"
+    project_id:
+      type: string
+      x-ntap-readCreate: true
+      description: Google Cloud KMS project ID.
+      example: "project1"
+    key_ring_location:
+      type: string
+      x-ntap-readCreate: true
+      description: Google Cloud KMS key ring location.
+      example: "location1"
+    key_ring_name:
+      type: string
+      x-ntap-readCreate: true
+      description: Google Cloud KMS key ring name.
+      example: "keyring1"
+
+gcp_kms_state:
+  description: |
+     Google Cloud Key Management Services is a cloud key management service (KMS) that provides a secure store for encryption keys. This object indicates whether or not the Google Cloud KMS key protection is available on all nodes in the cluster.
+     This is an advanced property; there is an added computational cost to retrieving its value. The property is not populated for either a collection GET or an instance GET unless it is explicitly requested using the `fields` query parameter or GET for all advanced properties is enabled.
+  type: object
+  x-ntap-readOnly: true
+  properties:
+    cluster_state:
+      type: boolean
+      description: Set to true when Google Cloud KMS key protection is available on all nodes of the cluster.
+    message:
+      type: string
+      description: Error message set when top-level internal key protection key (KEK) availability on cluster is false.
+      example: "Top-level internal key protection key (KEK) is unavailable on the following nodes with the associated reasons: Node: node1. Reason: No volumes created yet for the SVM. Wrapped KEK status will be available after creating encrypted volumes."
+    code:
+      type: string
+      description: Error code corresponding to the status message. Returns 0 if Google Cloud KMS key protection is available in all nodes of the cluster.
+      example: "346758"
+
+gcp_connectivity:
+  description: |
+     Indicates whether or not the Google Cloud KMS is reachable from all nodes in the cluster.
+     This is an advanced property; there is an added computational cost to retrieving its value. The property is not populated for either a collection GET or an instance GET unless it is explicitly requested using the `fields` query parameter or GET for all advanced properties is enabled.
+  type: object
+  x-ntap-readOnly: true
+  properties:
+    reachable:
+      type: boolean
+      description: Set to true if the Google Cloud KMS is reachable from all nodes of the cluster.
+    message:
+      type: string
+      description: Set to the error message when 'reachable' is false.
+      example: "Google Cloud KMS is not reachable from all nodes - <reason>."
+    code:
+      type: string
+      description: Code corresponding to the error message. Returns a 0 if Google Cloud KMS is reachable from all nodes in the cluster.
+      example: "346758"
+
+ekmip_server_connectivity:
+  description: |
+     Provides the connectivity status for the given SVM on the given node to all EKMIP servers configured on all nodes of the cluster.
+     This is an advanced property; there is an added computational cost to retrieving its value. The property is not populated for either a collection GET or an instance GET unless it is explicitly requested using the `fields` query parameter or GET for all advanced properties is enabled.
+  type: object
+  x-ntap-readOnly: true
+  properties:
+    node:
+      $ref: "#/INLINE_REF/definitions/node_reference"
+    reachable:
+      type: boolean
+      description: Set to true if the given SVM on the given node is able to communicate to all EKMIP servers configured on all nodes in the cluster.
+    message:
+      type: string
+      description: Error message set when cluster-wide EKMIP server availability from the given SVM and node is false.
+      example: "embedded KMIP server status unavailable on node."
+    code:
+      type: string
+      description: Code corresponding to the error message. Returns a 0 if a given SVM is able to communicate to the EKMIP servers of all of the nodes in the cluster.
+      example: "346758"
+
+gcp_kms:
+  type: object
+  properties:
+    uuid:
+      type: string
+      readOnly: true
+      description: A unique identifier for the Google Cloud KMS.
+      example: 1cd8a442-86d1-11e0-ae1c-123478563412
+    scope:
+      readOnly: true
+      $ref: '#/INLINE_REF/definitions/network_scope'
+    svm:
+      x-ntap-readCreate: true
+      $ref: "#/INLINE_REF/definitions/svm_reference"
+    project_id:
+      type: string
+      x-ntap-readCreate: true
+      description: Google Cloud project (application) ID of the deployed Google Cloud application that has appropriate access to the Google Cloud KMS.
+      example: "gcpapp1"
+    key_ring_name:
+      type: string
+      x-ntap-readCreate: true
+      description: Google Cloud KMS key ring name of the deployed Google Cloud application.
+      example: "gcpapp1-keyring"
+    key_ring_location:
+      type: string
+      x-ntap-readCreate: true
+      description: Google Cloud KMS key ring location.
+      example: "global"
+    key_name:
+      type: string
+      x-ntap-readCreate: true
+      description: Key Identifier of Google Cloud KMS key encryption key.
+      example: "cryptokey1"
+    authentication_method:
+      type: string
+      description: Google Cloud KMS authentication method.
+      enum:
+        - application_credentials_key
+        - sa_credentials_attachment
+      default: application_credentials_key
+      example: application_credentials_key
+    cloudkms_host:
+      type: string
+      description: Google Cloud KMS host subdomain.
+      example: "cloudkms.googleapis.com"
+    caller_account:
+      type: string
+      readOnly: true
+      description: Google Cloud KMS caller account email
+      example: myaccount@myproject.com
+    privileged_account:
+      type: string
+      description: Google Cloud KMS account to impersonate.
+      example: "myserviceaccount@myproject.iam.gserviceaccount.com"
+    oauth_host:
+      type: string
+      description: Open authorization server host name.
+      example: "oauth2.googleapis.com"
+    oauth_url:
+      type: string
+      description: Open authorization URL for the access token.
+      example: "https://oauth2.googleapis.com/token"
+    port:
+      type: integer
+      description: "Authorization server and Google Cloud KMS port number."
+      example: 443
+    verify_ip:
+      type: boolean
+      description: "Verify the identity of the Google Cloud KMS IP address."
+      default: false
+    verify_host:
+      type: boolean
+      description: "Verify the identity of the Google Cloud KMS host name."
+      default: false
+    application_credentials:
+      type: string
+      x-ntap-writeOnly: true
+      description: The Google Cloud application's service account credentials required to access the specified KMS. The client_email and private_key fields of the service account holder are required. The credentials are required if the `authentication_method` is set to `application_credentials_key`.
+      format: password
+      example: "{\"private_key\":\"ValidPrivateKey\",\"client_email\":\"my@account.email.com\"}"
+    proxy_type:
+      type: string
+      description: Type of proxy.
+      enum:
+        - http
+        - https
+      example: http
+    proxy_host:
+      type: string
+      description: Proxy host name.
+      example: "proxy.eng.com"
+    proxy_port:
+      type: integer
+      description: Proxy port number.
+      example: 1234
+    proxy_username:
+      type: string
+      description: Proxy username.
+      # cSpell:disable-next-line
+      example: "proxyuser"
+    proxy_password:
+      type: string
+      x-ntap-writeOnly: true
+      description: Proxy password. Password is not audited.
+      # cSpell:disable-next-line
+      example: "proxypassword"
+    gce_metadata_server:
+      type: string
+      description: A custom metadata server URL used for retrieving short lived authentication tokens if the default service account is not used. This is only applicable when the `authentication_method` is set to `sa_credentials_attachment`.
+      format: uri
+      example: "http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token"
+      default: "http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token"
+    state:
+      readOnly: true
+      $ref: "#/INLINE_REF/definitions/gcp_kms_state"
+    _links:
+      readOnly: true
+      $ref: "#/INLINE_REF/definitions/self_link"
+    google_reachability:
+      readOnly: true
+      $ref: "#/INLINE_REF/definitions/gcp_connectivity"
+    ekmip_reachability:
+      type: array
+      readOnly: true
+      items:
+        $ref: "#/INLINE_REF/definitions/ekmip_server_connectivity"
+
+gcp_kms_response:
+  type: object
+  properties:
+    records:
+      type: array
+      items:
+        $ref: "#/definitions/gcp_kms"
+    num_records:
+      type: integer
+      description: Number of records
+      example: 1
+    _links:
+      $ref: "#/INLINE_REF/definitions/collection_links"

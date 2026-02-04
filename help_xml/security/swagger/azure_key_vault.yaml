@@ -1,0 +1,212 @@
+azure_key_vault_key:
+  type: object
+  properties:
+    key_id:
+      type: string
+      x-ntap-readCreate: true
+      format: uri
+      description: Key identifier of the AKV key encryption key.
+      example: "https://keyvault1.vault.azure.net/keys/key1/12345678901234567890123456789012"
+
+azure_key_vault_state:
+  description: |
+     Indicates whether or not the AKV wrapped internal key is available cluster wide.
+     This is an advanced property; there is an added computational cost to retrieving its value. The property is not populated for either a collection GET or an instance GET unless it is explicitly requested using the `fields` query parameter or GET for all advanced properties is enabled.
+  type: object
+  x-ntap-readOnly: true
+  properties:
+    available:
+      type: boolean
+      description: Set to true when an AKV wrapped internal key is present on all nodes of the cluster.
+    message:
+      type: string
+      description: Error message set when top-level internal key protection key (KEK) availability on cluster is false.
+      example: "Top-level internal key protection key (KEK) is unavailable on the following nodes with the associated reasons: Node: node1. Reason: No volumes created yet for the SVM. Wrapped KEK status will be available after creating encrypted volumes."
+    code:
+      type: string
+      description: Code corresponding to the status message. Returns a 0 if AKV wrapped key is available on all nodes in the cluster.
+      example: "346758"
+
+azure_key_vault_connectivity:
+  description: |
+     Indicates whether or not the AKV service is reachable from all the nodes in the cluster.
+     This is an advanced property; there is an added computational cost to retrieving its value. The property is not populated for either a collection GET or an instance GET unless it is explicitly requested using the `fields` query parameter or GET for all advanced properties is enabled.
+  type: object
+  x-ntap-readOnly: true
+  properties:
+    reachable:
+      type: boolean
+      description: Set to true when the AKV service is reachable from all nodes of the cluster.
+    message:
+      type: string
+      description: Error message set when reachability is false.
+      example: AKV service is not reachable from all nodes - reason.
+    code:
+      type: string
+      description: Code corresponding to the status message. Returns a 0 if AKV service is reachable from all nodes in the cluster.
+      example: "346758"
+
+ekmip_server_connectivity:
+  description: |
+     Provides the connectivity status of the given node and for the given SVM to all EKMIP servers in all nodes of the cluster.
+     This is an advanced property; there is an added computational cost to retrieving its value. The property is not populated for either a collection GET or an instance GET unless it is explicitly requested using the `fields` query parameter or GET for all advanced properties is enabled.
+  type: object
+  x-ntap-readOnly: true
+  properties:
+    node:
+      $ref: "#/INLINE_REF/definitions/node_reference"
+    reachable:
+      type: boolean
+      description: Set to true when the given node for a given SVM is able to communicate to the EKMIP servers of all the nodes in the cluster.
+    message:
+      type: string
+      description: Error message set when cluster-wide EKMIP server availability from the given node is false.
+      example: embedded KMIP server status unavailable on node.
+    code:
+      type: string
+      description: Code corresponding to the status message. Returns a 0 if a given SVM is able to communicate to the EKMIP servers of all the nodes in the cluster.
+      example: "346758"
+
+azure_key_vault:
+  type: object
+  properties:
+    uuid:
+      type: string
+      readOnly: true
+      description: A unique identifier for the Azure Key Vault (AKV).
+      example: 1cd8a442-86d1-11e0-ae1c-123478563412
+    scope:
+      readOnly: true
+      $ref: '#/INLINE_REF/definitions/network_scope'
+    svm:
+      x-ntap-readCreate: true
+      $ref: "#/INLINE_REF/definitions/svm_reference"
+    configuration:
+      x-ntap-readCreate: true
+      $ref: "#/INLINE_REF/definitions/security_keystore_configuration"
+    enabled:
+      type: boolean
+      readOnly: true
+      description: Indicates whether the configuration is enabled.
+    client_id:
+      type: string
+      description: Application client ID of the deployed Azure application with appropriate access to an AKV.
+      example: "aaaaaaaa-bbbb-aaaa-bbbb-aaaaaaaaaaaa"
+    tenant_id:
+      type: string
+      description: Directory (tenant) ID of the deployed Azure application with appropriate access to an AKV.
+      example: "zzzzzzzz-yyyy-zzzz-yyyy-zzzzzzzzzzzz"
+    authentication_method:
+      type: string
+      readOnly: true
+      description: Authentication method for the AKV instance.
+      enum:
+        - client_secret
+        - certificate
+      example: client_secret
+    client_secret:
+      type: string
+      x-ntap-writeOnly: true
+      description: Secret used by the application to prove its identity to AKV.
+      format: password
+      example: "abcdef"
+    client_certificate:
+      type: string
+      x-ntap-writeOnly: true
+      # cSpell:disable-next-line
+      description: PKCS12 Certificate used by the application to prove its identity to AKV.
+      format: password
+      example: <CERTIFICATE-CONTENT>
+    key_id:
+      type: string
+      x-ntap-readCreate: true
+      format: uri
+      description: Key Identifier of AKV key encryption key.
+      example: "https://keyvault1.vault.azure.net/keys/key1/12345678901234567890123456789012"
+    name:
+      type: string
+      x-ntap-readCreate: true
+      format: uri
+      description: Name of the deployed AKV that will be used by ONTAP for storing keys.
+      example: "https://kmip-akv-keyvault.vault.azure.net/"
+    oauth_host:
+      type: string
+      description: Open authorization server host name.
+      # cSpell:disable-next-line
+      example: "login.microsoftonline.com"
+    vault_host:
+      type: string
+      description: AKV host subdomain.
+      example: "vault.azure.net"
+    port:
+      type: integer
+      description: Authorization server and vault port number.
+      example: 443
+    verify_ip:
+      type: boolean
+      x-ntap-readModify: true
+      description: Verify the identity of the AKV IP address.
+      example: false
+    verify_host:
+      type: boolean
+      x-ntap-readModify: true
+      description: Verify the identity of the AKV host name.
+      example: false
+    proxy_type:
+      type: string
+      description: Type of proxy.
+      enum:
+        - http
+        - https
+      example: http
+    proxy_host:
+      type: string
+      description: Proxy host.
+      example: "proxy.eng.com"
+    proxy_port:
+      type: integer
+      description: Proxy port.
+      example: 1234
+    proxy_username:
+      type: string
+      description: Proxy username.
+      # cSpell:disable-next-line
+      example: "proxyuser"
+    proxy_password:
+      type: string
+      x-ntap-writeOnly: true
+      description: Proxy password. Password is not audited.
+      # cSpell:disable-next-line
+      example: "proxypassword"
+    state:
+      readOnly: true
+      $ref: "#/INLINE_REF/definitions/azure_key_vault_state"
+    azure_reachability:
+      readOnly: true
+      $ref: "#/INLINE_REF/definitions/azure_key_vault_connectivity"
+    ekmip_reachability:
+      type: array
+      readOnly: true
+      items:
+        $ref: "#/INLINE_REF/definitions/ekmip_server_connectivity"
+    _links:
+      readOnly: true
+      $ref: "#/INLINE_REF/definitions/self_link"
+    skip_verification:
+      type: boolean
+      description: Set to true to skip the verification of the updated user credentials when updating credentials. The default value is false.
+      example: false
+
+azure_key_vault_response:
+  type: object
+  properties:
+    records:
+      type: array
+      items:
+        $ref: "#/definitions/azure_key_vault"
+    num_records:
+      type: integer
+      description: Number of records
+      example: 1
+    _links:
+      $ref: "#/INLINE_REF/definitions/collection_links"
