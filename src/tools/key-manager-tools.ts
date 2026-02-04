@@ -10,7 +10,9 @@ import type {
   KeyManager,
   KeyManagerListResult,
   KeyManagerResult,
-  KeyListResult
+  KeyListResult,
+  KeyServer,
+  KeyServerNodeState
 } from '../types/key-manager-types.js';
 
 // ================================
@@ -435,7 +437,7 @@ export async function handleClusterGetKeyManager(
     summary += `🌐 **External Key Manager**\n`;
     summary += `   Client Certificate: ${keyManager.external.client_certificate.uuid}\n`;
     summary += `   Key Servers:\n`;
-    keyManager.external.servers?.forEach(server => {
+    keyManager.external.servers?.forEach((server: KeyServer) => {
       summary += `     - ${server.server} (timeout: ${server.timeout}s)\n`;
     });
   }
@@ -450,4 +452,293 @@ export async function handleClusterGetKeyManager(
   return { summary, data: keyManager };
 }
 
-// Add handlers for remaining tools following the same pattern...
+export async function handleClusterCreateExternalKeyManager(
+  args: any,
+  clusterManager: OntapClusterManager
+): Promise<KeyManagerResult> {
+  const validated = ClusterCreateExternalKeyManagerSchema.parse(args);
+  const client = clusterManager.getClient(validated.cluster_name);
+
+  const result = await client.createExternalKeyManager({
+    svmUuid: validated.svm_uuid,
+    clientCertificateUuid: validated.client_certificate_uuid,
+    serverCaCertificateUuids: validated.server_ca_certificate_uuids,
+    servers: validated.key_servers,
+    policy: validated.policy
+  });
+
+  const keyManager = await client.getKeyManager(result.uuid);
+
+  const summary = `🔐 **External Key Manager Created Successfully**\n\n` +
+    `UUID: ${result.uuid}\n` +
+    `Cluster: ${validated.cluster_name}\n` +
+    `Scope: ${keyManager.scope}\n` +
+    `Key Servers: ${validated.key_servers.length}\n\n` +
+    `✅ External KMIP key management is now enabled.`;
+
+  return { summary, data: keyManager };
+}
+
+export async function handleClusterCreateOnboardKeyManager(
+  args: any,
+  clusterManager: OntapClusterManager
+): Promise<KeyManagerResult> {
+  const validated = ClusterCreateOnboardKeyManagerSchema.parse(args);
+  const client = clusterManager.getClient(validated.cluster_name);
+
+  const result = await client.createOnboardKeyManager({
+    passphrase: validated.passphrase,
+    synchronize: validated.synchronize
+  });
+
+  const keyManager = await client.getKeyManager(result.uuid);
+
+  let summary = `🔐 **Onboard Key Manager Created Successfully**\n\n` +
+    `UUID: ${result.uuid}\n` +
+    `Cluster: ${validated.cluster_name}\n` +
+    `Scope: ${keyManager.scope}\n\n`;
+
+  if (keyManager.onboard?.key_backup) {
+    summary += `⚠️  **CRITICAL: Save the backup data below immediately!**\n`;
+    summary += `Store it in a secure location for disaster recovery.\n\n`;
+    summary += `\`\`\`\n${keyManager.onboard.key_backup}\n\`\`\`\n\n`;
+  }
+
+  summary += `✅ Onboard Key Manager is now enabled.`;
+
+  return { summary, data: keyManager };
+}
+
+export async function handleClusterUpdateKeyManagerPassphrase(
+  args: any,
+  clusterManager: OntapClusterManager
+): Promise<KeyManagerResult> {
+  const validated = ClusterUpdatePassphraseSchema.parse(args);
+  const client = clusterManager.getClient(validated.cluster_name);
+
+  await client.updateKeyManagerPassphrase(validated.uuid, {
+    existingPassphrase: validated.existing_passphrase,
+    newPassphrase: validated.new_passphrase
+  });
+
+  const keyManager = await client.getKeyManager(validated.uuid);
+
+  let summary = `🔐 **Passphrase Updated Successfully**\n\n` +
+    `UUID: ${validated.uuid}\n` +
+    `Cluster: ${validated.cluster_name}\n\n`;
+
+  if (keyManager.onboard?.key_backup) {
+    summary += `⚠️  **CRITICAL: New backup data generated!**\n`;
+    summary += `Store this new backup in a secure location.\n\n`;
+    summary += `\`\`\`\n${keyManager.onboard.key_backup}\n\`\`\`\n\n`;
+  }
+
+  summary += `✅ Onboard Key Manager passphrase has been updated.`;
+
+  return { summary, data: keyManager };
+}
+
+export async function handleClusterSyncKeyManager(
+  args: any,
+  clusterManager: OntapClusterManager
+): Promise<KeyManagerResult> {
+  const validated = ClusterSyncKeyManagerSchema.parse(args);
+  const client = clusterManager.getClient(validated.cluster_name);
+
+  await client.syncOnboardKeyManager(validated.uuid, validated.passphrase);
+
+  const keyManager = await client.getKeyManager(validated.uuid);
+
+  const summary = `🔐 **Key Manager Synchronized**\n\n` +
+    `UUID: ${validated.uuid}\n` +
+    `Cluster: ${validated.cluster_name}\n\n` +
+    `✅ Onboard keys have been synchronized across all cluster nodes.`;
+
+  return { summary, data: keyManager };
+}
+
+export async function handleClusterDeleteKeyManager(
+  args: any,
+  clusterManager: OntapClusterManager
+): Promise<{ summary: string; data: { uuid: string; deleted: boolean } }> {
+  const validated = ClusterDeleteKeyManagerSchema.parse(args);
+  const client = clusterManager.getClient(validated.cluster_name);
+
+  await client.deleteKeyManager(validated.uuid);
+
+  const summary = `🔐 **Key Manager Deleted**\n\n` +
+    `UUID: ${validated.uuid}\n` +
+    `Cluster: ${validated.cluster_name}\n\n` +
+    `✅ Key manager configuration has been removed.`;
+
+  return { summary, data: { uuid: validated.uuid, deleted: true } };
+}
+
+export async function handleClusterListKeyServers(
+  args: any,
+  clusterManager: OntapClusterManager
+): Promise<{ summary: string; data: any[] }> {
+  const validated = ClusterListKeyServersSchema.parse(args);
+  const client = clusterManager.getClient(validated.cluster_name);
+
+  const keyServers = await client.listKeyServers(validated.key_manager_uuid);
+
+  let summary = `🔐 **Key Servers** (${keyServers.length} configured):\n\n`;
+  
+  if (keyServers.length === 0) {
+    summary = `No key servers configured for key manager ${validated.key_manager_uuid}.`;
+  } else {
+    keyServers.forEach(server => {
+      summary += `🌐 **${server.server}**\n`;
+      if (server.timeout) summary += `   • Timeout: ${server.timeout}s\n`;
+      if (server.username) summary += `   • Username: ${server.username}\n`;
+      if (server.connectivity) {
+        summary += `   • Cluster Available: ${server.connectivity.cluster_availability ? 'Yes' : 'No'}\n`;
+        if (server.connectivity.node_states) {
+          summary += `   • Node States:\n`;
+          server.connectivity.node_states.forEach((node: KeyServerNodeState) => {
+            summary += `     - ${node.node.name}: ${node.state}\n`;
+          });
+        }
+      }
+      summary += '\n';
+    });
+  }
+
+  return { summary, data: keyServers };
+}
+
+export async function handleClusterAddKeyServer(
+  args: any,
+  clusterManager: OntapClusterManager
+): Promise<{ summary: string; data: any }> {
+  const validated = ClusterAddKeyServerSchema.parse(args);
+  const client = clusterManager.getClient(validated.cluster_name);
+
+  await client.addKeyServer(validated.key_manager_uuid, {
+    server: validated.server,
+    timeout: validated.timeout,
+    username: validated.username,
+    password: validated.password
+  });
+
+  const summary = `🔐 **Key Server Added**\n\n` +
+    `Server: ${validated.server}\n` +
+    `Key Manager UUID: ${validated.key_manager_uuid}\n` +
+    `Cluster: ${validated.cluster_name}\n\n` +
+    `✅ Key server has been added successfully.`;
+
+  return { 
+    summary, 
+    data: {
+      key_manager_uuid: validated.key_manager_uuid,
+      server: validated.server,
+      timeout: validated.timeout || 25
+    }
+  };
+}
+
+export async function handleClusterDeleteKeyServer(
+  args: any,
+  clusterManager: OntapClusterManager
+): Promise<{ summary: string; data: { server: string; deleted: boolean } }> {
+  const validated = ClusterDeleteKeyServerSchema.parse(args);
+  const client = clusterManager.getClient(validated.cluster_name);
+
+  await client.deleteKeyServer(validated.key_manager_uuid, validated.server);
+
+  const summary = `🔐 **Key Server Removed**\n\n` +
+    `Server: ${validated.server}\n` +
+    `Key Manager UUID: ${validated.key_manager_uuid}\n` +
+    `Cluster: ${validated.cluster_name}\n\n` +
+    `✅ Key server has been removed successfully.`;
+
+  return { summary, data: { server: validated.server, deleted: true } };
+}
+
+export async function handleClusterListKeys(
+  args: any,
+  clusterManager: OntapClusterManager
+): Promise<KeyListResult> {
+  const validated = ClusterListKeysSchema.parse(args);
+  const client = clusterManager.getClient(validated.cluster_name);
+
+  const keys = await client.listKeys(validated.key_manager_uuid, {
+    keyType: validated.key_type,
+    restored: validated.restored
+  });
+
+  const data = keys.map(key => ({
+    key_id: key.key_id,
+    key_type: key.key_type,
+    key_tag: key.key_tag,
+    key_server: key.key_server,
+    restored: key.restored,
+    key_store: key.key_store,
+    key_user: key.key_user,
+    encryption_algorithm: key.encryption_algorithm
+  }));
+
+  let summary = `🔑 **Encryption Keys** (${keys.length} keys):\n\n`;
+  
+  if (keys.length === 0) {
+    summary = `No encryption keys found in key manager ${validated.key_manager_uuid}.`;
+  } else {
+    keys.forEach(key => {
+      summary += `🔑 **${key.key_id}**\n`;
+      summary += `   • Type: ${key.key_type}\n`;
+      if (key.key_tag) summary += `   • Tag: ${key.key_tag}\n`;
+      summary += `   • Restored: ${key.restored ? 'Yes' : 'No'}\n`;
+      summary += `   • Store: ${key.key_store}\n`;
+      if (key.key_server) summary += `   • Server: ${key.key_server}\n`;
+      summary += '\n';
+    });
+  }
+
+  return { summary, data };
+}
+
+export async function handleClusterCreateAuthKey(
+  args: any,
+  clusterManager: OntapClusterManager
+): Promise<{ summary: string; data: { key_id: string } }> {
+  const validated = ClusterCreateAuthKeySchema.parse(args);
+  const client = clusterManager.getClient(validated.cluster_name);
+
+  const result = await client.createAuthKey(validated.key_manager_uuid, {
+    keyTag: validated.key_tag,
+    passphrase: validated.passphrase
+  });
+
+  const summary = `🔑 **Authentication Key Created**\n\n` +
+    `Key ID: ${result.keyId}\n` +
+    `Key Manager UUID: ${validated.key_manager_uuid}\n` +
+    `Cluster: ${validated.cluster_name}\n` +
+    (validated.key_tag ? `Tag: ${validated.key_tag}\n` : '') +
+    `\n✅ Authentication key for NSE drives has been created.`;
+
+  return { summary, data: { key_id: result.keyId } };
+}
+
+export async function handleClusterRestoreKeys(
+  args: any,
+  clusterManager: OntapClusterManager
+): Promise<{ summary: string; data: { key_manager_uuid: string; restored: boolean } }> {
+  const validated = ClusterRestoreKeysSchema.parse(args);
+  const client = clusterManager.getClient(validated.cluster_name);
+
+  await client.restoreKeys(validated.key_manager_uuid);
+
+  const summary = `🔑 **Keys Restored**\n\n` +
+    `Key Manager UUID: ${validated.key_manager_uuid}\n` +
+    `Cluster: ${validated.cluster_name}\n\n` +
+    `✅ Missing encryption keys have been restored to nodes.`;
+
+  return { 
+    summary, 
+    data: { 
+      key_manager_uuid: validated.key_manager_uuid, 
+      restored: true 
+    } 
+  };
+}

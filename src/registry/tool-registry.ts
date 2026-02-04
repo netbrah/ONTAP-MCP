@@ -30,6 +30,7 @@ export enum ToolCategory {
   EXPORT_POLICIES = "export-policies",
   CIFS_SHARES = "cifs-shares",
   QOS_POLICIES = "qos-policies",
+  KEY_MANAGEMENT = "key-management",
   METRICS = "metrics",
   LEGACY_SINGLE_CLUSTER = "legacy-single-cluster"
 }
