@@ -10,7 +10,9 @@ import type {
   KeyManager,
   KeyManagerListResult,
   KeyManagerResult,
-  KeyListResult
+  KeyListResult,
+  KeyServer,
+  KeyServerNodeState
 } from '../types/key-manager-types.js';
 
 // ================================
@@ -435,7 +437,7 @@ export async function handleClusterGetKeyManager(
     summary += `🌐 **External Key Manager**\n`;
     summary += `   Client Certificate: ${keyManager.external.client_certificate.uuid}\n`;
     summary += `   Key Servers:\n`;
-    keyManager.external.servers?.forEach((server: any) => {
+    keyManager.external.servers?.forEach((server: KeyServer) => {
       summary += `     - ${server.server} (timeout: ${server.timeout}s)\n`;
     });
   }
@@ -594,7 +596,7 @@ export async function handleClusterListKeyServers(
         summary += `   • Cluster Available: ${server.connectivity.cluster_availability ? 'Yes' : 'No'}\n`;
         if (server.connectivity.node_states) {
           summary += `   • Node States:\n`;
-          server.connectivity.node_states.forEach((node: any) => {
+          server.connectivity.node_states.forEach((node: KeyServerNodeState) => {
             summary += `     - ${node.node.name}: ${node.state}\n`;
           });
         }
