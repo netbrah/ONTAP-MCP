@@ -81,3 +81,6 @@ demo/mcp.json
 
 # Reference files - not part of codebase
 
+
+# Backup files from simplification
+*.backup
